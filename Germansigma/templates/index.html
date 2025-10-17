@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Загрузка файлов</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            padding: 30px;
+            margin-top: 30px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .description {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #7f8c8d;
+            font-size: 16px;
+        }
+
+        .upload-area {
+            border: 2px dashed #bdc3c7;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .upload-area.valid {
+            border-color: #27ae60;
+            background-color: rgba(39, 174, 96, 0.05);
+        }
+
+        .upload-area.invalid {
+            border-color: #e74c3c;
+            background-color: rgba(231, 76, 60, 0.05);
+        }
+
+        .file-input {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            color: #bdc3c7;
+            margin-bottom: 15px;
+        }
+
+        .upload-text {
+            margin-bottom: 15px;
+            font-size: 18px;
+            color: #2c3e50;
+        }
+
+        .file-info {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 6px;
+            background-color: #f8f9fa;
+            font-size: 14px;
+            color: #495057;
+        }
+
+        .file-name {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .error-message {
+            color: #e74c3c;
+            margin-top: 10px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .submit-btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            transition: background-color 0.3s;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .submit-btn:hover {
+            background-color: #2980b9;
+        }
+
+        .submit-btn:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+
+        .spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .format-info {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+
+        .format-info h3 {
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+
+        .format-list {
+            list-style-type: none;
+        }
+
+        .format-list li {
+            padding: 5px 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .format-list li::before {
+            content: "✓";
+            color: #27ae60;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .flash-messages {
+            width: 100%;
+            max-width: 600px;
+            margin-bottom: 20px;
+        }
+
+        .flash-message {
+            padding: 12px 20px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+
+        .flash-success {
+            background-color: rgba(39, 174, 96, 0.1);
+            color: #27ae60;
+            border: 1px solid rgba(39, 174, 96, 0.2);
+        }
+
+        .flash-error {
+            background-color: rgba(231, 76, 60, 0.1);
+            color: #e74c3c;
+            border: 1px solid rgba(231, 76, 60, 0.2);
+        }
+    </style>
+</head>
+<body>
+
+
+    <div class="container">
+        <h1>Загрузка файлов</h1>
+        <p class="description">Выберите файл для загрузки на сервер</p>
+
+        <form id="uploadForm" action="{{ url_for('upload_file') }}" method="post" enctype="multipart/form-data">
+            <div class="upload-area" id="uploadArea">
+                <input type="file" name="file" id="fileInput" class="file-input" accept=".csv,.xlsx" required>
+                <div class="upload-icon">📁</div>
+                <p class="upload-text">Нажмите для выбора файла или перетащите его сюда</p>
+                <p>Поддерживаемые форматы: CSV, XLSX (Excel)</p>
+                <div class="file-info" id="fileInfo" style="display: none;">
+                    Выбран файл: <span class="file-name" id="fileName"></span>
+                </div>
+                <div class="error-message" id="errorMessage">
+                    Пожалуйста, выберите файл с расширением .csv или .xlsx
+                </div>
+            </div>
+
+            <button type="submit" class="submit-btn" id="submitBtn" disabled>
+                <div class="spinner" id="spinner"></div>
+                <span id="btnText">Загрузить файл</span>
+            </button>
+        </form>
+
+        <div class="format-info">
+            <h3>Поддерживаемые форматы:</h3>
+            <ul class="format-list">
+                <li>CSV файлы (Comma Separated Values)</li>
+                <li>XLSX файлы (Microsoft Excel)</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileInput = document.getElementById('fileInput');
+            const uploadArea = document.getElementById('uploadArea');
+            const fileInfo = document.getElementById('fileInfo');
+            const fileName = document.getElementById('fileName');
+            const errorMessage = document.getElementById('errorMessage');
+            const submitBtn = document.getElementById('submitBtn');
+            const uploadForm = document.getElementById('uploadForm');
+            const spinner = document.getElementById('spinner');
+            const btnText = document.getElementById('btnText');
+
+            // Валидация при выборе файла
+            fileInput.addEventListener('change', function() {
+                validateFile();
+            });
+
+            // Drag and drop функциональность
+            uploadArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+
+            uploadArea.addEventListener('dragleave', function() {
+                uploadArea.classList.remove('dragover');
+            });
+
+            uploadArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+
+                if (e.dataTransfer.files.length) {
+                    fileInput.files = e.dataTransfer.files;
+                    validateFile();
+                }
+            });
+
+            // Функция валидации файла
+            function validateFile() {
+                const file = fileInput.files[0];
+
+                if (file) {
+                    const fileNameText = file.name;
+                    const fileExtension = fileNameText.split('.').pop().toLowerCase();
+
+                    fileName.textContent = fileNameText;
+                    fileInfo.style.display = 'block';
+
+                    // Проверка расширения файла
+                    if (fileExtension === 'csv' || fileExtension === 'xlsx') {
+                        uploadArea.classList.remove('invalid');
+                        uploadArea.classList.add('valid');
+                        errorMessage.style.display = 'none';
+                        submitBtn.disabled = false;
+                    } else {
+                        uploadArea.classList.remove('valid');
+                        uploadArea.classList.add('invalid');
+                        errorMessage.style.display = 'block';
+                        submitBtn.disabled = true;
+                    }
+                } else {
+                    fileInfo.style.display = 'none';
+                    uploadArea.classList.remove('valid', 'invalid');
+                    errorMessage.style.display = 'none';
+                    submitBtn.disabled = true;
+                }
+            }
+
+            // Индикатор загрузки при отправке формы
+            uploadForm.addEventListener('submit', function() {
+                spinner.style.display = 'block';
+                btnText.textContent = 'Загрузка...';
+                submitBtn.disabled = true;
+            });
+        });
+    </script>
+</body>
+</html>
