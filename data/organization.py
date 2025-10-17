@@ -1,0 +1,26 @@
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, Date, Text
+import sqlalchemy
+from .db_session import SqlAlchemyBase
+
+
+class Organization(SqlAlchemyBase):
+    __tablename__ = 'organizations'
+    
+    id = Column(Integer, primary_key=True)
+    inn = Column(String(12), unique=True, nullable=False)
+    name = Column(String(255), nullable=False)
+    full_name = Column(String(500))
+    spark_status = Column(String(100))
+    internal_status = Column(String(100))
+    final_status = Column(String(100))
+    registry_addition_date = Column(Date)
+    registration_date = Column(Date)
+    manager_name = Column(String(255))
+    website = Column(String(255))
+    email = Column(String(255))
+    general_info = Column(Text)
+    
+    # Связи с другими таблицами
+    addresses = sqlalchemy.orm.relationship('Address', backref='organization', lazy=True)
+    financial_indicators = sqlalchemy.orm.relationship('FinancialIndicator', backref='organization', lazy=True)
+    # ... другие связи
