@@ -6,7 +6,7 @@ from .db_session import SqlAlchemyBase
 class Organization(SqlAlchemyBase):
     __tablename__ = 'organizations'
     
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     inn = Column(String(12), unique=True, nullable=False)
     name = Column(String(255), nullable=False)
     full_name = Column(String(500))
