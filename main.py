@@ -1,6 +1,8 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for
+from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
 from datetime import datetime
 import os
+from werkzeug.utils import secure_filename
+from werkzeug.exceptions import RequestEntityTooLarge
 from dotenv import load_dotenv
 from flask_login import LoginManager, login_user, current_user, logout_user, login_required
 from data import db_session
@@ -10,16 +12,22 @@ from flask_restful import Api
 from functools import wraps
 from flask import abort
 import requests
-import os
-from werkzeug.utils import secure_filename
-from dotenv import load_dotenv
-
 
 app = Flask(__name__)
 
 load_dotenv()
-# Конфигурация
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
+
+# Конфигурация с резервным секретным ключом
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
+app.config['UPLOAD_FOLDER'] = 'static/uploads'
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 МБ максимальный размер файла
+
+# Разрешенные расширения файлов
+ALLOWED_EXTENSIONS = {'csv', 'xlsx', 'xls'}
+
+# Создаем папку для загрузок, если она не существует
+if not os.path.exists(app.config['UPLOAD_FOLDER']):
+    os.makedirs(app.config['UPLOAD_FOLDER'])
 
 swagger = Swagger(app, template={
         "swagger": "2.0",
@@ -293,25 +301,63 @@ init_db()
 register_dynamic_api_routes(app)
 
 
+def allowed_file(filename):
+    """Проверяет, разрешено ли расширение файла"""
+    return '.' in filename and \
+        filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
 @app.route('/')
 def index():
     """Главная страница"""
     return render_template('index.html')
 
+
 @app.route('/upload', methods=['POST'])
 def upload_file():
-    if 'file' not in request.files:
-        return "No file part"
+    """Обработка загрузки файла с улучшенной валидацией"""
+    try:
+        # Проверяем наличие файла в запросе
+        if 'file' not in request.files:
+            return render_template('index.html', error='Файл не выбран')
 
-    file = request.files['file']
-    if file.filename == '':
-        return "No selected file"
+        file = request.files['file']
 
-    # Сохранение файла
-    filepath = os.path.join('static/uploads', file.filename)
-    file.save(filepath)
+        # Если пользователь не выбрал файл
+        if file.filename == '':
+            return render_template('index.html', error='Файл не выбран')
 
-    return render_template('index.html')
+        # Проверяем расширение файла
+        if not allowed_file(file.filename):
+            return render_template('index.html', error='Неверный формат файла. Разрешены только CSV, XLSX, XLS, PDF, TXT, DOC, DOCX файлы.')
+
+        # Если файл валиден, сохраняем его
+        if file:
+            # Безопасное имя файла
+            filename = secure_filename(file.filename)
+
+            # Генерируем уникальное имя, если файл уже существует
+            base_filename, extension = os.path.splitext(filename)
+            counter = 1
+            while os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], filename)):
+                filename = f"{base_filename}_{counter}{extension}"
+                counter += 1
+
+            # Сохраняем файл
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(filepath)
+
+            # Получаем размер файла
+            file_size = os.path.getsize(filepath)
+            file_size_mb = round(file_size / (1024 * 1024), 2)
+
+            return render_template('index.html', 
+                                 success=f'Файл "{filename}" успешно загружен! Размер: {file_size_mb} МБ')
+
+    except RequestEntityTooLarge:
+        return render_template('index.html', error='Файл слишком большой. Максимальный размер: 16 МБ')
+    except Exception as e:
+        return render_template('index.html', error=f'Произошла ошибка при загрузке файла: {str(e)}')
 
 
 @app.route('/contact', methods=['GET', 'POST'])
@@ -329,45 +375,60 @@ def contact():
     
     return render_template('contact.html')
 
+
 @app.route('/about')
 def about():
     """Страница о проекте"""
     return render_template('about.html')
+
 
 @app.route('/api/docs')
 def api_docs():
     """Swagger UI документация"""
     return redirect('/apidocs/')
 
+
 @app.route('/api/test')
 def api_test():
     """Страница тестирования API"""
     return render_template('api_test.html')
+
 
 @app.route('/filter')
 def filter_page():
     """Страница фильтрации таблицы организаций"""
     return render_template('filter_api.html')
 
+
 @app.route('/dynamic-filter')
 def dynamic_filter_page():
     """Динамическая страница фильтрации для всех таблиц"""
     return render_template('dynamic_filter.html')
+
 
 @app.errorhandler(404)
 def not_found(error):
     """Обработчик ошибки 404"""
     return render_template('404.html'), 404
 
+
 @app.errorhandler(500)
 def internal_error(error):
     """Обработчик ошибки 500"""
     return render_template('500.html'), 500
+
+
+@app.errorhandler(413)
+def request_entity_too_large(error):
+    """Обработчик ошибки 413 - слишком большой файл"""
+    return render_template('index.html', error='Файл слишком большой. Максимальный размер: 16 МБ'), 413
+
 
 if __name__ == '__main__':
     # Создаем папку для шаблонов если её нет
     os.makedirs('templates', exist_ok=True)
     os.makedirs('static/css', exist_ok=True)
     os.makedirs('static/js', exist_ok=True)
+    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
     
     app.run(debug=True, host='0.0.0.0', port=5000)
