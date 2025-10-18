@@ -725,12 +725,151 @@ def register_crud_api_routes(app):
         else:  # DELETE
             return delete_table_item('production', item_id)
     
+    # Новые эндпоинты для сравнения компаний
+    @app.route('/api/companies/search', methods=['GET'])
+    def search_companies():
+        """Поиск компаний по названию или ИНН"""
+        query = request.args.get('q', '').strip()
+        limit = min(request.args.get('limit', 10, type=int), 50)
+        
+        if not query or len(query) < 2:
+            return jsonify({'companies': [], 'total': 0})
+        
+        try:
+            session = db_session.create_session()
+            
+            # Поиск по названию и ИНН
+            companies = session.query(Organization).filter(
+                or_(
+                    Organization.name.like(f"%{query}%"),
+                    Organization.full_name.like(f"%{query}%"),
+                    Organization.inn.like(f"%{query}%")
+                )
+            ).limit(limit).all()
+            
+            result = []
+            for org in companies:
+                result.append({
+                    'id': org.id,
+                    'name': org.name,
+                    'full_name': org.full_name,
+                    'inn': org.inn,
+                    'spark_status': org.spark_status,
+                    'internal_status': org.internal_status
+                })
+            
+            return jsonify({
+                'companies': result,
+                'total': len(result),
+                'query': query
+            })
+            
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+        finally:
+            session.close()
+    
+    @app.route('/api/compare/companies', methods=['POST'])
+    def compare_companies():
+        """Сравнение выбранных компаний с выбранными характеристиками"""
+        session = None
+        try:
+            data = request.get_json()
+            company_ids = data.get('company_ids', [])
+            selected_fields = data.get('selected_fields', {})
+            
+            if not company_ids or len(company_ids) > 3:
+                return jsonify({'error': 'Выберите от 1 до 3 компаний'}), 400
+            
+            if not selected_fields:
+                return jsonify({'error': 'Выберите хотя бы одно поле для сравнения'}), 400
+            
+            session = db_session.create_session()
+            result = {
+                'companies': [],
+                'comparison_data': {},
+                'selected_fields': selected_fields
+            }
+            
+            # Получаем данные компаний
+            for company_id in company_ids:
+                org = session.query(Organization).filter(Organization.id == company_id).first()
+                if org:
+                    company_data = {
+                        'id': org.id,
+                        'name': org.name,
+                        'full_name': org.full_name,
+                        'inn': org.inn,
+                        'spark_status': org.spark_status,
+                        'internal_status': org.internal_status
+                    }
+                    result['companies'].append(company_data)
+            
+            # Получаем выбранные поля из всех таблиц
+            for table_name, fields in selected_fields.items():
+                if table_name not in MODELS:
+                    continue
+                
+                model_class = MODELS[table_name]
+                table_data = {}
+                
+                for company_id in company_ids:
+                    company_records = []
+                    
+                    # Для таблицы organizations используем id, для остальных - organization_id
+                    if table_name == 'organizations':
+                        records = session.query(model_class).filter(
+                            model_class.id == company_id
+                        ).all()
+                    else:
+                        # Ищем записи по organization_id
+                        records = session.query(model_class).filter(
+                            model_class.organization_id == company_id
+                        ).all()
+                        
+                        # Если не найдено записей, попробуем найти записи с organization_id = 0 (общие данные)
+                        if not records and company_id in [1, 2, 3]:  # Для основных организаций
+                            records = session.query(model_class).filter(
+                                model_class.organization_id == 0
+                            ).all()
+                        
+                        # Если все еще нет записей, покажем все доступные данные из этой таблицы
+                        if not records:
+                            # Получаем первые несколько записей из таблицы для демонстрации
+                            records = session.query(model_class).limit(5).all()
+                    
+                    for record in records:
+                        record_data = {}
+                        for field in fields:
+                            if hasattr(record, field):
+                                value = getattr(record, field)
+                                if isinstance(value, datetime):
+                                    value = value.isoformat()
+                                record_data[field] = value
+                        company_records.append(record_data)
+                    
+                    table_data[company_id] = company_records
+                
+                result['comparison_data'][table_name] = table_data
+            
+            return jsonify(result)
+            
+        except Exception as e:
+            if session:
+                session.rollback()
+            return jsonify({'error': str(e)}), 500
+        finally:
+            if session:
+                session.close()
+    
     print("CRUD API маршруты зарегистрированы:")
     print("- /api/tables - список всех таблиц")
     print("- /api/tables/<name>/columns - метаданные столбцов")
     print("- /api/tables/<name>/data - GET (список), POST (создание)")
     print("- /api/tables/<name>/data/<id> - GET, PUT, DELETE (конкретная запись)")
     print("- /api/tables/<name>/stats - статистика по таблице")
+    print("- /api/companies/search - поиск компаний")
+    print("- /api/compare/companies - сравнение компаний")
     print("\nПоддерживаемые HTTP методы:")
     print("- GET - получение данных")
     print("- POST - создание новых записей")

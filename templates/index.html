@@ -4,14 +4,14 @@
 
 {% block content %}
 <!-- Герой секция -->
-<section class="hero-section gradient-bg text-white py-5">
+<section class="hero-section py-5" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);">
     <div class="container">
         <div class="row align-items-center">
-            <div class="col-lg-6">
-                <h1 class="display-4 fw-bold mb-4 fade-in-up">
+            <div class="col-lg-8">
+                <h1 class="display-4 fw-bold mb-4 text-white fade-in-up">
                     База данных промышленных предприятий Москвы
                 </h1>
-                <p class="lead mb-4 fade-in-up">
+                <p class="lead mb-4 text-white-50 fade-in-up">
                     Комплексная система для работы с данными о промышленных предприятиях, 
                     их финансовых показателях, налоговых данных и контактной информации.
                 </p>
@@ -19,14 +19,14 @@
                     <a href="{{ url_for('api_docs') }}" class="btn btn-light btn-lg">
                         <i class="fas fa-book me-2"></i>API Документация
                     </a>
-                    <a href="{{ url_for('about') }}" class="btn btn-outline-light btn-lg">
-                        <i class="fas fa-info-circle me-2"></i>Узнать больше
+                    <a href="{{ url_for('dynamic_filter_page') }}" class="btn btn-outline-light btn-lg">
+                        <i class="fas fa-cogs me-2"></i>Динамический фильтр
                     </a>
                 </div>
             </div>
-            <div class="col-lg-6 text-center">
+            <div class="col-lg-4 text-center">
                 <div class="hero-image">
-                    <i class="fas fa-industry" style="font-size: 15rem; opacity: 0.3;"></i>
+                    <i class="fas fa-industry text-white" style="font-size: 12rem; opacity: 0.8;"></i>
                 </div>
             </div>
         </div>
@@ -225,12 +225,12 @@
 </section>
 
 <!-- CTA секция -->
-<section class="py-5 gradient-bg text-white">
+<section class="py-5" style="background: linear-gradient(135deg, #19B7A1 0%, #89C561 100%);">
     <div class="container text-center">
         <div class="row justify-content-center">
             <div class="col-lg-8">
-                <h2 class="mb-4">Готовы начать работу с API?</h2>
-                <p class="lead mb-4">
+                <h2 class="mb-4 text-white">Готовы начать работу с API?</h2>
+                <p class="lead mb-4 text-white">
                     Получите доступ к полной документации API и начните интегрировать 
                     данные о промышленных предприятиях Москвы в ваши проекты.
                 </p>
@@ -238,9 +238,9 @@
                     <i class="fas fa-book me-2"></i>
                     Открыть документацию
                 </a>
-                <a href="{{ url_for('contact') }}" class="btn btn-outline-light btn-lg">
-                    <i class="fas fa-envelope me-2"></i>
-                    Связаться с нами
+                <a href="{{ url_for('dynamic_filter_page') }}" class="btn btn-outline-light btn-lg">
+                    <i class="fas fa-cogs me-2"></i>
+                    Динамический фильтр
                 </a>
             </div>
         </div>

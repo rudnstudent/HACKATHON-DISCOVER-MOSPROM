@@ -397,10 +397,17 @@ def upsert_row(row: pd.Series):
 
 # ========= MAIN =========
 def excel_to_api(excel_path: str):
-    df = pd.read_excel(excel_path, dtype=str)
+    print(excel_path)
+    try:
+        df = pd.read_excel(excel_path, dtype=str)
+    except Exception as e:
+        print(f"Ошибка при чтении файла: {e}")
+        return
     df.columns = [str(c).strip().replace("\ufeff", "") for c in df.columns]
     if df.empty:
         print("Файл пуст"); sys.exit(2)
+
+    print(38493)
 
     for i, row in df.iterrows():
         print(f"\n📄 Строка {i+1}/{len(df)}")
