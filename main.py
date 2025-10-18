@@ -862,4 +862,3 @@ if __name__ == '__main__':
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
     
     app.run(debug=True, host='0.0.0.0', port=5000)
->>>>>>> 4c8dd5532cdc63fdf5d515471200fbc696eceb35

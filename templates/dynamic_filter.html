@@ -269,6 +269,9 @@ document.addEventListener('DOMContentLoaded', function() {
             buildDynamicFilters(data.columns);
             buildSortOptions(data.columns);
             
+            // Скрываем загрузку после успешной загрузки
+            hideLoading();
+            
         } catch (error) {
             showError('Ошибка загрузки метаданных: ' + error.message);
         }
@@ -474,6 +477,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Отображение результатов
     function displayResults(data) {
+        // Скрываем загрузку
+        hideLoading();
+        
         if (data.items.length === 0) {
             document.getElementById('resultsContent').innerHTML = `
                 <div class="alert alert-warning text-center">
@@ -739,8 +745,12 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('resultsContent').innerHTML = '';
     }
 
-    function showError(message) {
+    function hideLoading() {
         document.getElementById('loadingSpinner').style.display = 'none';
+    }
+
+    function showError(message) {
+        hideLoading();
         document.getElementById('errorMessage').style.display = 'block';
         document.getElementById('errorText').textContent = message;
     }
