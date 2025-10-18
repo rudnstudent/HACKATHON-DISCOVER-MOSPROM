@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from flask_login import LoginManager, login_user, current_user, logout_user, login_required
 from data import db_session
 from flasgger import Swagger
-from api import register_api_routes
+from api_simple import register_simple_api_routes
 from flask_restful import Api
 from functools import wraps
 from flask import abort
@@ -281,7 +281,7 @@ swagger = Swagger(app, template={
 # Инициализация API будет выполнена в register_api_routes
 
 def init_db():
-    db_path = os.path.join(os.path.dirname(__file__), "db/database.db")
+    db_path = os.path.join(os.path.dirname(__file__), "db/database_test.db")
     print(f"Initializing database at: {db_path}")
     os.makedirs(os.path.dirname(db_path), exist_ok=True)
     db_session.global_init(db_path)
@@ -290,7 +290,7 @@ def init_db():
 init_db()
 
 # Регистрация API маршрутов
-register_api_routes(app)
+register_simple_api_routes(app)
 
 
 @app.route('/')
