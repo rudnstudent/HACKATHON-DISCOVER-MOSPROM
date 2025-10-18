@@ -1,0 +1,621 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <title>Финансово-экономические показатели — графики</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sansation:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap" rel="stylesheet">
+  <!-- CSS: ЗАМЕНИТЕ старые правила canvas на эти -->
+<style>
+  body{font-family:"Sansation", system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif;margin:24px;background:#fff}
+  h2{margin:20px 0 30px}
+  .grid{display:grid;grid-template-columns:1fr;gap:28px}
+  @media (min-width:1100px){ .grid{grid-template-columns:1fr 1fr} }
+  .card{padding:24px;border:1px solid #e8e8e8;border-radius:16px;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+  /* ВАЖНО: фиксируем высоту именно у обёртки */
+  .chart{position:relative;height:360px; /* при желании 320–420px */ }
+  /* Канвас заполняет всю обёртку */
+  .chart > canvas{width:100% !important;height:100% !important;display:block}
+  .note{color:#555;font-size:12px;margin-top:4px}
+</style>
+<style>
+.company-card{
+  background:#fff;
+  border:1px solid #e8e8e8;
+  border-radius:20px;
+  box-shadow:0 2px 6px rgba(0,0,0,.05);
+  padding:24px 28px;
+  margin-bottom:36px;
+  font-family:'Sansation',system-ui,sans-serif;
+}
+.company-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  flex-wrap:wrap;
+  gap:12px;
+  border-bottom:1px solid #f0f0f0;
+  padding-bottom:12px;
+  margin-bottom:16px;
+}
+.company-header h2{margin:0;font-size:1.6rem;color:#19b7a1;}
+.company-header .subtitle{margin:0;color:#666;font-size:.95rem;}
+.status-badges{display:flex;gap:8px;flex-wrap:wrap;}
+.badge{
+  padding:4px 10px;
+  border-radius:9999px;
+  font-size:.8rem;
+  font-weight:600;
+  color:#fff;
+}
+.badge.active{background:#19b7a1;}
+.badge.verified{background:#89c561;}
+.badge.registry{background:#fbbc3a;color:#222;}
+.company-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+  gap:20px 28px;
+}
+.info-group h3{
+  font-size:1.05rem;
+  color:#487b2f;
+  margin-bottom:6px;
+  border-bottom:2px solid #9aa02933;
+  display:inline-block;
+  padding-bottom:2px;
+}
+.info-group ul{
+  list-style:none;
+  padding:0;
+  margin:0;
+  font-size:.93rem;
+  line-height:1.4;
+  color:#333;
+}
+.info-group li{margin-bottom:6px;}
+.info-group a{color:#19b7a1;text-decoration:none;}
+.info-group a:hover{text-decoration:underline;}
+.note{
+  margin-top:18px;
+  font-size:.8rem;
+  color:#777;
+  text-align:right;
+}
+</style>
+<style>
+.asset-production {
+  margin-bottom: 40px;
+  font-family: 'Sansation', system-ui, sans-serif;
+}
+
+.section-title {
+  color: #19b7a1;
+  font-size: 1.6rem;
+  margin-bottom: 20px;
+  border-left: 5px solid #19b7a1;
+  padding-left: 10px;
+}
+
+.asset-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+}
+
+.card-block {
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 18px;
+  box-shadow: 0 2px 5px rgba(0,0,0,.05);
+  padding: 20px 22px;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.card-block:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 3px 8px rgba(0,0,0,.08);
+}
+
+.card-block h3 {
+  color: #487b2f;
+  font-size: 1.15rem;
+  margin-bottom: 10px;
+  border-bottom: 2px solid #9aa02933;
+  padding-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.card-block .icon {
+  font-size: 1.2rem;
+}
+
+.card-block ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: .95rem;
+  color: #333;
+  line-height: 1.4;
+}
+.card-block li {
+  margin-bottom: 6px;
+}
+
+.map-link {
+  margin-top: 10px;
+}
+.map-link a {
+  color: #19b7a1;
+  font-weight: 600;
+  text-decoration: none;
+}
+.map-link a:hover {
+  text-decoration: underline;
+}
+</style>
+
+
+</head>
+<body>
+  <h1>Финансово-экономические показатели</h1>
+
+  <!-- ======= Карточка организации ======= -->
+<section class="company-card">
+  <div class="company-header">
+    <div>
+      <h2>ПАО «МосПром 01»</h2>
+      <p class="subtitle">Публичное акционерное общество</p>
+    </div>
+    <div class="status-badges">
+      <span class="badge active">Действующая</span>
+      <span class="badge verified">Проверено</span>
+      <span class="badge registry">В реестре</span>
+    </div>
+  </div>
+
+  <div class="company-grid">
+    <div class="info-group">
+      <h3>Общие сведения</h3>
+      <ul>
+        <li><b>ИНН:</b> 779478454</li>
+        <li><b>Дата регистрации:</b> 11.08.2024</li>
+        <li><b>Дата добавления в реестр:</b> 15.07.2024</li>
+        <li><b>Размер предприятия:</b> Крупное</li>
+        <li><b>По численности:</b> От 251 до 1000 чел.</li>
+        <li><b>По выручке:</b> Свыше 2000 млн руб.</li>
+        <li><b>Статус МСП:</b> Микропредприятие</li>
+        <li><b>Системообразующее:</b> Нет</li>
+        <li><b>Площадка:</b> Москва</li>
+      </ul>
+    </div>
+
+    <div class="info-group">
+      <h3>Отрасль</h3>
+      <ul>
+        <li><b>Основная:</b> Пищевая промышленность</li>
+        <li><b>Подотрасль:</b> Переработка сельхозпродукции</li>
+        <li><b>Дополнительная:</b> Логистика и склад</li>
+        <li><b>Подотрасль (доп.):</b> Складские услуги</li>
+        <li><b>ОКВЭД (осн.):</b> 10.89 — Прочие пищевые продукты</li>
+        <li><b>ОКВЭД (производств.):</b> 11.07 — Безалкогольные напитки</li>
+      </ul>
+    </div>
+
+    <div class="info-group">
+      <h3>Адреса</h3>
+      <ul>
+        <li><b>Юридический адрес:</b><br>г. Москва, Марксистская ул., д. 12</li>
+        <li><b>Производство:</b><br>г. Подольск, Новослободская ул., д. 5</li>
+        <li><b>Доп. площадка:</b><br>г. Москва, Профсоюзная ул., д. 28</li>
+      </ul>
+    </div>
+
+    <div class="info-group">
+      <h3>Контакты</h3>
+      <ul>
+        <li><b>Руководитель:</b> Кузнецов Д.Д.</li>
+        <li><b>Телефон (руководство):</b> <a href="tel:+74958187963">+7 (495) 818-79-63</a></li>
+        <li><b>Почта (руководство):</b> <a href="mailto:contact01@example.test">contact01@example.test</a></li>
+        <li><b>Контактное лицо:</b> Отдел по работе с клиентами</li>
+        <li><b>Телефон:</b> <a href="tel:+74953256785">+7 (495) 325-67-85</a></li>
+        <li><b>Эл. почта:</b> <a href="mailto:contact01@example.test">contact01@example.test</a></li>
+        <li><b>Сайт:</b> <a href="https://company01.example.test" target="_blank">company01.example.test</a></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="info-production">
+  <div class="grid">
+    <div class="card">
+      <h2>Выручка, тыс. руб.</h2>
+      <div class="chart"><canvas id="rev"></canvas></div>
+    </div>
+
+    <div class="card">
+      <h2>Чистая прибыль (убыток), тыс. руб.</h2>
+      <div class="chart"><canvas id="profit"></canvas></div>
+    </div>
+
+    <div class="card">
+      <h2>Среднесписочная численность, чел</h2>
+      <div class="chart"><canvas id="headcount"></canvas></div>
+    </div>
+    <div class="card">
+      <h2>Фонд оплаты труда, тыс. руб.</h2>
+      <div class="chart"><canvas id="payroll"></canvas></div>
+    </div>
+
+    <div class="card">
+      <h2>Налоги (НДФЛ vs Налог на прибыль), тыс. руб.</h2>
+      <div class="chart"><canvas id="taxes"></canvas></div>
+      <div class="note">Включает данные за 2024 год, если доступны.</div>
+    </div>
+
+    <div class="card">
+      <h2>Комбо: Выручка, Чистая прибыль и Маржинальность</h2>
+      <div class="chart"><canvas id="combo"></canvas></div>
+      <div class="note">Маржинальность = прибыль / выручка, %.</div>
+    </div>
+  </div>
+</section>
+
+<section class="asset-production">
+  <h2 class="section-title">Имущественно-земельный комплекс и производимая продукция</h2>
+
+  <div class="asset-grid">
+    <!-- Блок 1 — Земля и объекты -->
+    <div class="card-block">
+      <h3><span class="icon">🏭</span> Имущественно-земельный комплекс</h3>
+      <ul>
+        <li><b>Кадастровый номер ЗУ:</b> 77:28:6647119:105</li>
+        <li><b>Площадь ЗУ:</b> 4.24 га</li>
+        <li><b>Разрешённое использование:</b> Промышленное производство</li>
+        <li><b>Вид собственности ЗУ:</b> Собственность</li>
+        <li><b>Кадастровый номер ОКСа:</b> 77:49:2622631:368</li>
+        <li><b>Площадь ОКСов:</b> 62 422 кв.м</li>
+        <li><b>Вид собственности ОКСов:</b> Аренда</li>
+      </ul>
+    </div>
+
+    <!-- Блок 2 — Продукция -->
+    <div class="card-block">
+      <h3><span class="icon">⚙️</span> Производимая продукция</h3>
+      <ul>
+        <li><b>Название:</b> Линии / модули / комплектующие</li>
+        <li><b>Коды ОКПД 2:</b> 26.20.1, 27.11.3</li>
+        <li><b>Наличие госзаказа:</b> Да</li>
+        <li><b>Поставки на экспорт:</b> Да</li>
+        <li><b>Объём экспорта:</b> 286,25 млн руб.</li>
+        <li><b>Государства экспорта:</b> Казахстан, Беларусь, Узбекистан</li>
+      </ul>
+    </div>
+
+    <!-- Блок 3 — Координаты -->
+    <div class="card-block">
+      <h3><span class="icon">📍</span> Геолокация предприятия</h3>
+      <ul>
+        <li><b>Широта:</b> 55.639538</li>
+        <li><b>Долгота:</b> 37.422994</li>
+        <li><b>Округ:</b> ВАО</li>
+        <li><b>Район:</b> Сокол</li>
+      </ul>
+
+      <div class="map-link">
+        <a 
+          href="https://yandex.ru/maps/?pt=37.422994,55.639538&z=14&l=map" 
+          target="_blank"
+        >
+          Открыть в Яндекс.Картах
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
+  <script>
+    // === Исходный JSON ===
+    const raw = {
+      "Выручка предприятия, тыс. руб.": {
+        "2017": "1032738","2018": "1136014","2019": "1239759","2020": "1317257",
+        "2021": "1399597","2022": "1478164","2023": "1638895"
+      },
+      "Чистая прибыль (убыток), тыс. руб.": {
+        "2017": "105839","2018": "69563","2019": "146532","2020": "144827",
+        "2021": "101807","2022": "104815","2023": "116368"
+      },
+      "Среднесписочная численность персонала (всего по компании), чел": {
+        "2017": "238","2018": "240","2019": "241","2020": "240","2021": "244","2022": "241","2023": "240"
+      },
+      "Фонд оплаты труда всех сотрудников организации, тыс. руб.": {
+        "2017": "308768","2018": "259530","2019": "428376","2020": "341959",
+        "2021": "432405","2022": "348647","2023": "367883"
+      },
+      "НДФЛ, тыс. руб.": {
+        "2017": "40139","2018": "33738","2019": "55688","2020": "44454",
+        "2021": "56212","2022": "45324","2023": "47824","2024": "47824"
+      },
+      "Налог на прибыль, тыс. руб.": {
+        "2017": "21167","2018": "13912","2019": "29306","2020": "28965",
+        "2021": "20361","2022": "20963","2023": "23273","2024": "22122"
+      }
+    };
+
+    // === Палитра (ваши цвета) ===
+    const COLORS = {
+      teal:  '#59e1ab',
+      lime:  '#58b878',
+      amber: '#51904b',
+      olive: '#438548',
+      green: '#2c946a',
+      green2: '#00a18e'
+    };
+
+    Chart.defaults.font.family = 'Sansation';
+
+    // === Вспомогательные функции ===
+    const num = v => (v == null ? null : Number(String(v).replace(/\s/g,'')));
+    const ru = new Intl.NumberFormat('ru-RU');
+    const pct = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 1 });
+
+    // Собираем единый набор годов (метрика может иметь «дыры», напр. 2024 только у налогов)
+    const allYears = Array.from(new Set(
+      Object.values(raw).flatMap(obj => Object.keys(obj))
+    )).sort((a,b) => Number(a) - Number(b));
+
+    // Удобный доступ к сериям по ключу
+    const pickSeries = (key) => allYears.map(y => num(raw[key]?.[y] ?? null));
+
+    const KEY_REVENUE = "Выручка предприятия, тыс. руб.";
+    const KEY_PROFIT  = "Чистая прибыль (убыток), тыс. руб.";
+    const KEY_HEAD    = "Среднесписочная численность персонала (всего по компании), чел";
+    const KEY_PAYROLL = "Фонд оплаты труда всех сотрудников организации, тыс. руб.";
+    const KEY_PIT     = "НДФЛ, тыс. руб.";
+    const KEY_PROFIT_TAX = "Налог на прибыль, тыс. руб.";
+
+    const dataRevenue = pickSeries(KEY_REVENUE);
+    const dataProfit  = pickSeries(KEY_PROFIT);
+    const dataHead    = pickSeries(KEY_HEAD);
+    const dataPayroll = pickSeries(KEY_PAYROLL);
+    const dataPIT     = pickSeries(KEY_PIT);
+    const dataProfTax = pickSeries(KEY_PROFIT_TAX);
+
+    // Производная метрика: маржинальность, %
+    const dataMarginPct = allYears.map((_, i) => {
+      const r = dataRevenue[i], p = dataProfit[i];
+      return (r && p) ? (p / r * 100) : null;
+    });
+
+    // Общие опции форматирования подсказок/ось Y (тыс. руб. и т.п.)
+    const tooltipCurrency = (suffix=' тыс. руб.') => ({
+      callbacks: {
+        label: (ctx) => {
+          const v = ctx.raw;
+          if (v == null) return `${ctx.dataset.label}: нет данных`;
+          return `${ctx.dataset.label}: ${ru.format(v)}${suffix}`;
+        }
+      }
+    });
+
+    const tooltipPlain = (suffix='') => ({
+      callbacks: {
+        label: (ctx) => {
+          const v = ctx.raw;
+          if (v == null) return `${ctx.dataset.label}: нет данных`;
+          return `${ctx.dataset.label}: ${ru.format(v)}${suffix}`;
+        }
+      }
+    });
+
+    // Базовые опции сетки/легенды
+    const baseOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: { grid: { display: false } },
+        y: { grid: { color: 'rgba(0,0,0,.06)' }, ticks: { callback: v => ru.format(v) } }
+      },
+      plugins: {
+        legend: { position: 'bottom' }
+      }
+    };
+
+    // Создатель чартов
+    const make = (id, cfg) => new Chart(document.getElementById(id), cfg);
+
+    // 1) Выручка — линия
+    make('rev', {
+      type: 'line',
+      data: {
+        labels: allYears,
+        datasets: [{
+          label: 'Выручка',
+          data: dataRevenue,
+          borderColor: COLORS.teal,
+          backgroundColor: COLORS.teal + '33',
+          pointRadius: 3,
+          pointHoverRadius: 5,
+          borderWidth: 2,
+          spanGaps: true,
+          tension: .25,
+        }]
+      },
+      options: {
+        ...baseOptions,
+        plugins: { ...baseOptions.plugins, tooltip: tooltipCurrency() }
+      }
+    });
+
+    // 2) Чистая прибыль — столбцы
+    make('profit', {
+      type: 'bar',
+      data: {
+        labels: allYears,
+        datasets: [{
+          label: 'Чистая прибыль',
+          data: dataProfit,
+          backgroundColor: COLORS.lime,
+          borderColor: COLORS.lime,
+          borderWidth: 1
+        }]
+      },
+      options: {
+        ...baseOptions,
+        plugins: { ...baseOptions.plugins, tooltip: tooltipCurrency() }
+      }
+    });
+
+    // 3) Среднесписочная численность — линия
+    make('headcount', {
+      type: 'line',
+      data: {
+        labels: allYears,
+        datasets: [{
+          label: 'Численность',
+          data: dataHead,
+          borderColor: COLORS.amber,
+          backgroundColor: COLORS.amber + '33',
+          pointRadius: 3,
+          pointHoverRadius: 5,
+          borderWidth: 2,
+          spanGaps: true,
+          tension: .2,
+        }]
+      },
+      options: {
+        ...baseOptions,
+        plugins: { ...baseOptions.plugins, tooltip: tooltipPlain(' чел') },
+        scales: {
+          ...baseOptions.scales,
+          y: { ...baseOptions.scales.y, ticks: { callback: v => ru.format(v) } }
+        }
+      }
+    });
+
+    // 4) ФОТ — столбцы
+    make('payroll', {
+      type: 'bar',
+      data: {
+        labels: allYears,
+        datasets: [{
+          label: 'ФОТ',
+          data: dataPayroll,
+          backgroundColor: COLORS.olive,
+          borderColor: COLORS.olive,
+          borderWidth: 1
+        }]
+      },
+      options: {
+        ...baseOptions,
+        plugins: { ...baseOptions.plugins, tooltip: tooltipCurrency() }
+      }
+    });
+
+    // 5) Налоги — групповые столбцы
+    make('taxes', {
+      type: 'bar',
+      data: {
+        labels: allYears,
+        datasets: [
+          {
+            label: 'НДФЛ',
+            data: dataPIT,
+            backgroundColor: COLORS.green,
+            borderColor: COLORS.green,
+            borderWidth: 1
+          },
+          {
+            label: 'Налог на прибыль',
+            data: dataProfTax,
+            backgroundColor: COLORS.teal,
+            borderColor: COLORS.teal,
+            borderWidth: 1
+          }
+        ]
+      },
+      options: {
+        ...baseOptions,
+        plugins: { ...baseOptions.plugins, tooltip: tooltipCurrency() },
+        scales: {
+          ...baseOptions.scales,
+          x: { stacked: false }, y: { stacked: false, ...baseOptions.scales.y }
+        }
+      }
+    });
+
+    // 6) Комбо: Выручка + Прибыль + Маржинальность (%)
+    make('combo', {
+      data: {
+        labels: allYears,
+        datasets: [
+          {
+            type: 'bar',
+            label: 'Выручка',
+            data: dataRevenue,
+            backgroundColor: COLORS.teal,
+            borderColor: COLORS.teal,
+            borderWidth: 1,
+            yAxisID: 'yMoney'
+          },
+          {
+            type: 'bar',
+            label: 'Чистая прибыль',
+            data: dataProfit,
+            backgroundColor: COLORS.lime,
+            borderColor: COLORS.lime,
+            borderWidth: 1,
+            yAxisID: 'yMoney'
+          },
+          {
+            type: 'line',
+            label: 'Маржинальность, %',
+            data: dataMarginPct,
+            borderColor: COLORS.fbbc3a || COLORS.amber, // защита на случай переименования
+            backgroundColor: (COLORS.fbbc3a || COLORS.amber) + '33',
+            pointRadius: 3,
+            pointHoverRadius: 5,
+            borderWidth: 2,
+            tension: .25,
+            yAxisID: 'yPct'
+          }
+        ]
+      },
+      options: {
+        ...baseOptions,
+        scales: {
+          x: { grid: { display:false } },
+          yMoney: {
+            type: 'linear', position: 'left',
+            grid: { color: 'rgba(0,0,0,.06)' },
+            ticks: { callback: v => ru.format(v) }
+          },
+          yPct: {
+            type: 'linear', position: 'right',
+            grid: { drawOnChartArea:false },
+            ticks: { callback: v => `${pct.format(v)}%` },
+            suggestedMin: 0, suggestedMax: 20
+          }
+        },
+        plugins: {
+          ...baseOptions.plugins,
+          tooltip: {
+            callbacks: {
+              label: (ctx) => {
+                const v = ctx.raw;
+                if (ctx.dataset.yAxisID === 'yPct') {
+                  return `${ctx.dataset.label}: ${pct.format(v ?? 0)}%`;
+                }
+                return `${ctx.dataset.label}: ${ru.format(v ?? 0)} тыс. руб.`;
+              }
+            }
+          }
+        }
+      }
+    });
+  </script>
+</body>
+</html>
