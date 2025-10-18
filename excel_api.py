@@ -402,13 +402,23 @@ def excel_to_api(excel_path: str):
         df = pd.read_excel(excel_path, dtype=str)
     except Exception as e:
         print(f"Ошибка при чтении файла: {e}")
-        return
+        return 0
     df.columns = [str(c).strip().replace("\ufeff", "") for c in df.columns]
     if df.empty:
-        print("Файл пуст"); sys.exit(2)
+        print("Файл пуст")
+        return 0
 
-    print(38493)
+    print(f"Начинаем обработку {len(df)} записей")
 
+    processed_count = 0
     for i, row in df.iterrows():
         print(f"\n📄 Строка {i+1}/{len(df)}")
-        upsert_row(row)
+        try:
+            upsert_row(row)
+            processed_count += 1
+        except Exception as e:
+            print(f"Ошибка обработки строки {i+1}: {e}")
+            continue
+    
+    print(f"Обработано записей: {processed_count}")
+    return processed_count

@@ -19,6 +19,8 @@ app = Flask(__name__)
 load_dotenv()
 # Конфигурация
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 МБ
+app.config['UPLOAD_FOLDER'] = 'static/uploads'
 
 swagger = Swagger(app, template={
         "swagger": "2.0",
@@ -279,6 +281,10 @@ swagger = Swagger(app, template={
 
 # Инициализация API будет выполнена в register_api_routes
 
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ['xlsx', 'xls']
+
 def init_db():
     db_path = os.path.join(os.path.dirname(__file__), "db/database_test.db")
     print(f"Initializing database at: {db_path}")
@@ -379,6 +385,59 @@ def dynamic_filter_page():
 def company_comparison_page():
     """Страница сравнения компаний"""
     return render_template('company_comparison.html')
+
+@app.route('/upload-excel')
+def upload_excel_page():
+    """Страница загрузки Excel файла"""
+    return render_template('upload_excel.html')
+
+@app.route('/upload-excel', methods=['POST'])
+def upload_excel_file():
+    """Обработка загрузки Excel файла"""
+    if 'file' not in request.files:
+        return jsonify({'error': 'Файл не найден'}), 400
+
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'Файл не выбран'}), 400
+
+    if file and allowed_file(file.filename):
+        try:
+            filename = secure_filename(file.filename)
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(filepath)
+            
+            # Получаем размер файла
+            file_size = os.path.getsize(filepath)
+            file_size_mb = round(file_size / (1024 * 1024), 2)
+            
+            # Обрабатываем файл
+            records_processed = excel_api.excel_to_api(filepath)
+            
+            return jsonify({
+                'success': True,
+                'filename': filename,
+                'file_size': f"{file_size_mb} МБ",
+                'records_processed': records_processed,
+                'message': f'Файл "{filename}" успешно обработан! Обработано записей: {records_processed}'
+            })
+            
+        except Exception as e:
+            return jsonify({'error': f'Ошибка обработки файла: {str(e)}'}), 500
+    else:
+        return jsonify({'error': 'Недопустимый тип файла. Разрешены только .xlsx и .xls'}), 400
+
+@app.route('/upload-success')
+def upload_success_page():
+    """Страница успешной загрузки"""
+    filename = request.args.get('filename', 'Неизвестно')
+    records = request.args.get('records', '0')
+    file_size = request.args.get('file_size', 'Неизвестно')
+    
+    return render_template('upload_success.html', 
+                         filename=filename, 
+                         records=records, 
+                         file_size=file_size)
 
 
 
