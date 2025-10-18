@@ -352,7 +352,7 @@ def upload_file():
             file_size = os.path.getsize(filepath)
             file_size_mb = round(file_size / (1024 * 1024), 2)
 
-            excel_api(filepath)
+            excel_api.excel_to_api(filepath)
 
             return render_template('index.html', 
                                  success=f'Файл "{filename}" успешно загружен! Размер: {file_size_mb} МБ')
