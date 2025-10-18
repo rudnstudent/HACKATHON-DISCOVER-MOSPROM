@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from flask_login import LoginManager, login_user, current_user, logout_user, login_required
 from data import db_session
 from flasgger import Swagger
-from api_simple import register_simple_api_routes
+from api_dynamic_filters import register_dynamic_api_routes
 from flask_restful import Api
 from functools import wraps
 from flask import abort
@@ -290,7 +290,7 @@ def init_db():
 init_db()
 
 # Регистрация API маршрутов
-register_simple_api_routes(app)
+register_dynamic_api_routes(app)
 
 
 @app.route('/')
@@ -338,6 +338,21 @@ def about():
 def api_docs():
     """Swagger UI документация"""
     return redirect('/apidocs/')
+
+@app.route('/api/test')
+def api_test():
+    """Страница тестирования API"""
+    return render_template('api_test.html')
+
+@app.route('/filter')
+def filter_page():
+    """Страница фильтрации таблицы организаций"""
+    return render_template('filter_api.html')
+
+@app.route('/dynamic-filter')
+def dynamic_filter_page():
+    """Динамическая страница фильтрации для всех таблиц"""
+    return render_template('dynamic_filter.html')
 
 @app.errorhandler(404)
 def not_found(error):

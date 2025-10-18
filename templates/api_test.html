@@ -1,0 +1,431 @@
+{% extends "base.html" %}
+
+{% block title %}Тестирование API - Moscow Industry Database{% endblock %}
+
+{% block content %}
+<!-- Заголовок страницы -->
+<section class="py-5 gradient-bg text-white">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center">
+                <h1 class="display-4 fw-bold mb-4">Тестирование API</h1>
+                <p class="lead">
+                    Интерактивное тестирование фильтрации и поиска в API
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Форма тестирования -->
+<section class="py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 mx-auto">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="mb-0">
+                            <i class="fas fa-search me-2"></i>
+                            Тестирование фильтрации API
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <form id="apiTestForm">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="endpoint" class="form-label">Эндпоинт</label>
+                                    <select class="form-select" id="endpoint" required>
+                                        <option value="/api/organizations">Организации</option>
+                                        <option value="/api/financial-indicators">Финансовые показатели</option>
+                                        <option value="/api/taxes">Налоговые данные</option>
+                                        <option value="/api/contacts">Контакты</option>
+                                        <option value="/api/addresses">Адреса</option>
+                                        <option value="/api/okveds">ОКВЭД</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="perPage" class="form-label">Записей на странице</label>
+                                    <input type="number" class="form-control" id="perPage" value="10" min="1" max="1000">
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="exactFilter" class="form-label">Точное значение</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="exactField" placeholder="Поле">
+                                        <span class="input-group-text">=</span>
+                                        <input type="text" class="form-control" id="exactValue" placeholder="Значение">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="searchFilter" class="form-label">Поиск по подстроке</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="searchField" placeholder="Поле">
+                                        <span class="input-group-text">~</span>
+                                        <input type="text" class="form-control" id="searchValue" placeholder="Подстрока">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="rangeFilter" class="form-label">Диапазон значений</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="rangeField" placeholder="Поле">
+                                        <input type="number" class="form-control" id="rangeMin" placeholder="От">
+                                        <input type="number" class="form-control" id="rangeMax" placeholder="До">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="generalSearch" class="form-label">Общий поиск</label>
+                                    <input type="text" class="form-control" id="generalSearch" placeholder="Поиск по всем полям">
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="sortBy" class="form-label">Сортировка</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="sortBy" placeholder="Поле">
+                                        <select class="form-select" id="sortOrder">
+                                            <option value="asc">По возрастанию</option>
+                                            <option value="desc">По убыванию</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="page" class="form-label">Страница</label>
+                                    <input type="number" class="form-control" id="page" value="1" min="1">
+                                </div>
+                            </div>
+
+                            <div class="text-center">
+                                <button type="submit" class="btn btn-primary btn-lg me-3">
+                                    <i class="fas fa-search me-2"></i>
+                                    Выполнить запрос
+                                </button>
+                                <button type="button" class="btn btn-secondary btn-lg" id="clearForm">
+                                    <i class="fas fa-eraser me-2"></i>
+                                    Очистить
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Результаты -->
+<section class="py-5 bg-light" id="resultsSection" style="display: none;">
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">
+                            <i class="fas fa-table me-2"></i>
+                            Результаты запроса
+                        </h4>
+                        <button class="btn btn-outline-secondary btn-sm" id="copyUrl">
+                            <i class="fas fa-copy me-1"></i>
+                            Копировать URL
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div id="loadingSpinner" class="text-center" style="display: none;">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Загрузка...</span>
+                            </div>
+                        </div>
+                        
+                        <div id="errorMessage" class="alert alert-danger" style="display: none;">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <span id="errorText"></span>
+                        </div>
+                        
+                        <div id="resultsContent">
+                            <!-- Результаты будут загружены здесь -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Примеры запросов -->
+<section class="py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <h2 class="gradient-text text-center mb-5">Примеры запросов</h2>
+            </div>
+        </div>
+        <div class="row g-4">
+            <div class="col-lg-4 col-md-6">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-building text-primary me-2"></i>
+                            Организации
+                        </h5>
+                        <p class="card-text">Поиск и фильтрация организаций</p>
+                        <ul class="list-unstyled small">
+                            <li><code>?name_like=ООО</code> - по названию</li>
+                            <li><code>?inn=1234567890</code> - по ИНН</li>
+                            <li><code>?search=Москва</code> - общий поиск</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-chart-line text-primary me-2"></i>
+                            Финансы
+                        </h5>
+                        <p class="card-text">Анализ финансовых показателей</p>
+                        <ul class="list-unstyled small">
+                            <li><code>?year=2023</code> - за год</li>
+                            <li><code>?revenue_min=1000000</code> - по доходу</li>
+                            <li><code>?sort_by=revenue</code> - сортировка</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-receipt text-primary me-2"></i>
+                            Налоги
+                        </h5>
+                        <p class="card-text">Анализ налоговых данных</p>
+                        <ul class="list-unstyled small">
+                            <li><code>?moscow_taxes_min=50000</code> - по налогам</li>
+                            <li><code>?year=2023</code> - за год</li>
+                            <li><code>?sort_by=moscow_taxes</code> - сортировка</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('apiTestForm');
+    const resultsSection = document.getElementById('resultsSection');
+    const loadingSpinner = document.getElementById('loadingSpinner');
+    const errorMessage = document.getElementById('errorMessage');
+    const resultsContent = document.getElementById('resultsContent');
+    const clearFormBtn = document.getElementById('clearForm');
+    const copyUrlBtn = document.getElementById('copyUrl');
+    
+    let currentUrl = '';
+    
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        executeApiRequest();
+    });
+    
+    clearFormBtn.addEventListener('click', function() {
+        form.reset();
+        resultsSection.style.display = 'none';
+    });
+    
+    copyUrlBtn.addEventListener('click', function() {
+        if (currentUrl) {
+            navigator.clipboard.writeText(currentUrl).then(() => {
+                showNotification('URL скопирован в буфер обмена', 'success');
+            });
+        }
+    });
+    
+    function executeApiRequest() {
+        const endpoint = document.getElementById('endpoint').value;
+        const params = new URLSearchParams();
+        
+        // Пагинация
+        const page = document.getElementById('page').value;
+        const perPage = document.getElementById('perPage').value;
+        if (page) params.append('page', page);
+        if (perPage) params.append('per_page', perPage);
+        
+        // Точное значение
+        const exactField = document.getElementById('exactField').value;
+        const exactValue = document.getElementById('exactValue').value;
+        if (exactField && exactValue) {
+            params.append(exactField, exactValue);
+        }
+        
+        // Поиск по подстроке
+        const searchField = document.getElementById('searchField').value;
+        const searchValue = document.getElementById('searchValue').value;
+        if (searchField && searchValue) {
+            params.append(searchField + '_like', searchValue);
+        }
+        
+        // Диапазон значений
+        const rangeField = document.getElementById('rangeField').value;
+        const rangeMin = document.getElementById('rangeMin').value;
+        const rangeMax = document.getElementById('rangeMax').value;
+        if (rangeField) {
+            if (rangeMin) params.append(rangeField + '_min', rangeMin);
+            if (rangeMax) params.append(rangeField + '_max', rangeMax);
+        }
+        
+        // Общий поиск
+        const generalSearch = document.getElementById('generalSearch').value;
+        if (generalSearch) {
+            params.append('search', generalSearch);
+        }
+        
+        // Сортировка
+        const sortBy = document.getElementById('sortBy').value;
+        const sortOrder = document.getElementById('sortOrder').value;
+        if (sortBy) {
+            params.append('sort_by', sortBy);
+            params.append('sort_order', sortOrder);
+        }
+        
+        // Формируем URL
+        currentUrl = `http://localhost:5000${endpoint}?${params.toString()}`;
+        
+        // Показываем загрузку
+        resultsSection.style.display = 'block';
+        loadingSpinner.style.display = 'block';
+        errorMessage.style.display = 'none';
+        resultsContent.innerHTML = '';
+        
+        // Выполняем запрос
+        fetch(currentUrl)
+            .then(response => response.json())
+            .then(data => {
+                loadingSpinner.style.display = 'none';
+                displayResults(data);
+            })
+            .catch(error => {
+                loadingSpinner.style.display = 'none';
+                showError('Ошибка выполнения запроса: ' + error.message);
+            });
+    }
+    
+    function displayResults(data) {
+        if (data.error) {
+            showError(data.error);
+            return;
+        }
+        
+        let html = `
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">${data.total}</h5>
+                            <p class="card-text">Всего записей</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">${data.pages}</h5>
+                            <p class="card-text">Страниц</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">${data.current_page}</h5>
+                            <p class="card-text">Текущая страница</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">${data.items.length}</h5>
+                            <p class="card-text">На странице</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        if (data.filters_applied && Object.keys(data.filters_applied).length > 0) {
+            html += `
+                <div class="alert alert-info">
+                    <strong>Примененные фильтры:</strong>
+                    <ul class="mb-0 mt-2">
+                        ${Object.entries(data.filters_applied).map(([key, value]) => 
+                            `<li><code>${key} = ${value}</code></li>`
+                        ).join('')}
+                    </ul>
+                </div>
+            `;
+        }
+        
+        if (data.items.length > 0) {
+            html += `
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                ${Object.keys(data.items[0]).map(key => 
+                                    `<th>${key}</th>`
+                                ).join('')}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${data.items.map(item => 
+                                `<tr>
+                                    ${Object.values(item).map(value => 
+                                        `<td>${value || '-'}</td>`
+                                    ).join('')}
+                                </tr>`
+                            ).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        } else {
+            html += '<div class="alert alert-warning">Записи не найдены</div>';
+        }
+        
+        resultsContent.innerHTML = html;
+    }
+    
+    function showError(message) {
+        errorMessage.style.display = 'block';
+        document.getElementById('errorText').textContent = message;
+    }
+    
+    function showNotification(message, type = 'info') {
+        // Простое уведомление
+        const notification = document.createElement('div');
+        notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+        notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        notification.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.remove();
+            }
+        }, 3000);
+    }
+});
+</script>
+{% endblock %}

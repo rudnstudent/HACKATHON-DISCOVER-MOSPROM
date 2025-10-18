@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Фильтр таблицы организаций</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --background-color: #f5f7fa;
+            --border-color: #ddd;
+            --hover-color: #f0f8ff;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--background-color);
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+        
+        h1 {
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .search-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .search-box {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+        
+        .filter-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .column-selector {
+            flex: 1;
+            min-width: 300px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .range-filter {
+            flex: 1;
+            min-width: 300px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .sort-controls {
+            flex: 1;
+            min-width: 300px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+        }
+        
+        h3 {
+            margin-top: 0;
+            color: var(--primary-color);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+        }
+        
+        .column-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 10px;
+            background-color: white;
+        }
+        
+        .column-item {
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .column-item input {
+            margin-right: 8px;
+        }
+        
+        .range-inputs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .range-inputs input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+        }
+        
+        select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        
+        .sort-direction {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .sort-direction button {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background-color: white;
+            cursor: pointer;
+        }
+        
+        .sort-direction button.active {
+            background-color: var(--secondary-color);
+            color: white;
+            border-color: var(--secondary-color);
+        }
+        
+        .table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1200px;
+        }
+        
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 250px;
+        }
+        
+        th {
+            background-color: var(--primary-color);
+            color: white;
+            position: sticky;
+            top: 0;
+            cursor: pointer;
+        }
+        
+        th:hover {
+            background-color: #1a2530;
+        }
+        
+        tr:hover {
+            background-color: var(--hover-color);
+        }
+        
+        .stats {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .button {
+            padding: 8px 15px;
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .button:hover {
+            background-color: #2980b9;
+        }
+        
+        .reset-btn {
+            background-color: #e74c3c;
+        }
+        
+        .reset-btn:hover {
+            background-color: #c0392b;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        @media (max-width: 768px) {
+            .filter-controls {
+                flex-direction: column;
+            }
+            
+            .column-selector, .range-filter, .sort-controls {
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Фильтр таблицы организаций</h1>
+        
+        <div class="search-section">
+            <input type="text" id="searchInput" class="search-box" placeholder="Поиск по всей таблице...">
+            
+            <div class="action-buttons">
+                <button id="applyFilters" class="button">Применить фильтры</button>
+                <button id="resetFilters" class="button reset-btn">Сбросить фильтры</button>
+            </div>
+        </div>
+        
+        <div class="filter-controls">
+            <div class="column-selector">
+                <h3>Выбор столбцов</h3>
+                <div class="column-list" id="columnList">
+                    <!-- Столбцы будут добавлены через JavaScript -->
+                </div>
+            </div>
+            
+            <div class="range-filter">
+                <h3>Фильтр по диапазону</h3>
+                <div>
+                    <label for="rangeColumn">Столбец:</label>
+                    <select id="rangeColumn">
+                        <!-- Опции будут добавлены через JavaScript -->
+                    </select>
+                </div>
+                <div class="range-inputs">
+                    <input type="text" id="rangeFrom" placeholder="От">
+                    <input type="text" id="rangeTo" placeholder="До">
+                </div>
+            </div>
+            
+            <div class="sort-controls">
+                <h3>Сортировка</h3>
+                <div>
+                    <label for="sortColumn">Столбец:</label>
+                    <select id="sortColumn">
+                        <!-- Опции будут добавлены через JavaScript -->
+                    </select>
+                </div>
+                <div class="sort-direction">
+                    <button id="sortAsc" class="active">По возрастанию</button>
+                    <button id="sortDesc">По убыванию</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="table-container">
+            <table id="dataTable">
+                <thead>
+                    <!-- Заголовки будут добавлены через JavaScript -->
+                </thead>
+                <tbody>
+                    <!-- Данные будут добавлены через JavaScript -->
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="stats" id="stats">
+            Показано 0 из 0 записей
+        </div>
+    </div>
+
+    <script>
+        // Названия столбцов
+        const columnNames = {
+            "id": "ID",
+            "name": "Название организации",
+            "fullName": "Полное наименование",
+            "status": "Статус",
+            "date": "Дата регистрации",
+            "address": "Адрес",
+            "industry": "Основная отрасль",
+            "additionalIndustry": "Дополнительная отрасль",
+            "secondaryIndustry": "Вторичная отрасль",
+            "presentation": "Презентация",
+            "activity": "Основная деятельность",
+            "secondaryActivity": "Вторичная деятельность",
+            "productionActivity": "Производственная деятельность",
+            "info": "Общая информация",
+            "size": "Размер предприятия",
+            "sizeType": "Тип размера",
+            "employeeRange": "Диапазон сотрудников",
+            "employeeCount": "Количество сотрудников",
+            "revenue": "Выручка",
+            "revenueRange": "Диапазон выручки",
+            "headOrg": "Головная организация",
+            "phone": "Телефон",
+            "email": "Email",
+            "contactPerson": "Контактное лицо",
+            "contactPhone": "Контактный телефон",
+            "website": "Сайт",
+            "contactEmail": "Контактный email",
+            "support": "Поддержка",
+            "specialStatus": "Особый статус",
+            "location": "Местоположение",
+            "supportStatus": "Статус поддержки",
+            "systemOrg": "Системообразующая организация",
+            "systemOrgStatus": "Статус системообразующей организации",
+            "revenue2020": "Выручка 2020",
+            "revenue2021": "Выручка 2021",
+            "revenue2022": "Выручка 2022",
+            "revenue2023": "Выручка 2023",
+            "revenue2024": "Выручка 2024",
+            "revenue2025": "Выручка 2025",
+            "revenue2026": "Выручка 2026",
+            "profit2020": "Прибыль 2020",
+            "profit2021": "Прибыль 2021",
+            "profit2022": "Прибыль 2022",
+            "profit2023": "Прибыль 2023",
+            "profit2024": "Прибыль 2024",
+            "profit2025": "Прибыль 2025",
+            "profit2026": "Прибыль 2026",
+            "employees2020": "Сотрудники 2020",
+            "employees2021": "Сотрудники 2021",
+            "employees2022": "Сотрудники 2022",
+            "employees2023": "Сотрудники 2023",
+            "employees2024": "Сотрудники 2024",
+            "employees2025": "Сотрудники 2025",
+            "employees2026": "Сотрудники 2026",
+            "moscowEmployees2020": "Московские сотрудники 2020",
+            "moscowEmployees2021": "Московские сотрудники 2021",
+            "moscowEmployees2022": "Московские сотрудники 2022",
+            "moscowEmployees2023": "Московские сотрудники 2023"
+        };
+
+        // Инициализация при загрузке страницы
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeColumnSelector();
+            initializeRangeFilter();
+            initializeSortControls();
+            renderTable();
+            setupEventListeners();
+        });
+
+        // Инициализация выбора столбцов
+        function initializeColumnSelector() {
+            const columnList = document.getElementById('columnList');
+            
+            for (const [key, value] of Object.entries(columnNames)) {
+                const columnItem = document.createElement('div');
+                columnItem.className = 'column-item';
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = `col-${key}`;
+                checkbox.checked = true;
+                checkbox.dataset.column = key;
+                
+                const label = document.createElement('label');
+                label.htmlFor = `col-${key}`;
+                label.textContent = value;
+                
+                columnItem.appendChild(checkbox);
+                columnItem.appendChild(label);
+                columnList.appendChild(columnItem);
+            }
+        }
+
+        // Инициализация фильтра по диапазону
+        function initializeRangeFilter() {
+            const rangeColumn = document.getElementById('rangeColumn');
+            
+            for (const [key, value] of Object.entries(columnNames)) {
+                const option = document.createElement('option');
+                option.value = key;
+                option.textContent = value;
+                rangeColumn.appendChild(option);
+            }
+        }
+
+        // Инициализация контролов сортировки
+        function initializeSortControls() {
+            const sortColumn = document.getElementById('sortColumn');
+            
+            for (const [key, value] of Object.entries(columnNames)) {
+                const option = document.createElement('option');
+                option.value = key;
+                option.textContent = value;
+                sortColumn.appendChild(option);
+            }
+            
+            // Установка обработчиков для кнопок сортировки
+            document.getElementById('sortAsc').addEventListener('click', function() {
+                this.classList.add('active');
+                document.getElementById('sortDesc').classList.remove('active');
+            });
+            
+            document.getElementById('sortDesc').addEventListener('click', function() {
+                this.classList.add('active');
+                document.getElementById('sortAsc').classList.remove('active');
+            });
+        }
+
+        // Рендеринг таблицы
+        function renderTable(filteredData = tableData) {
+            const table = document.getElementById('dataTable');
+            const thead = table.querySelector('thead');
+            const tbody = table.querySelector('tbody');
+            
+            // Очистка таблицы
+            thead.innerHTML = '';
+            tbody.innerHTML = '';
+            
+            // Получение выбранных столбцов
+            const selectedColumns = getSelectedColumns();
+            
+            // Создание заголовков
+            const headerRow = document.createElement('tr');
+            selectedColumns.forEach(column => {
+                const th = document.createElement('th');
+                th.textContent = columnNames[column];
+                th.dataset.column = column;
+                th.addEventListener('click', () => sortByColumn(column));
+                headerRow.appendChild(th);
+            });
+            thead.appendChild(headerRow);
+            
+            // Заполнение данными
+            filteredData.forEach(row => {
+                const tr = document.createElement('tr');
+                selectedColumns.forEach(column => {
+                    const td = document.createElement('td');
+                    td.textContent = row[column] || '';
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+            
+            // Обновление статистики
+            updateStats(filteredData.length);
+        }
+
+        // Получение выбранных столбцов
+        function getSelectedColumns() {
+            const checkboxes = document.querySelectorAll('#columnList input[type="checkbox"]:checked');
+            return Array.from(checkboxes).map(checkbox => checkbox.dataset.column);
+        }
+
+        // Обновление статистики
+        function updateStats(count) {
+            const stats = document.getElementById('stats');
+            stats.textContent = `Показано ${count} из ${tableData.length} записей`;
+        }
+
+        // Сортировка по столбцу
+        function sortByColumn(column) {
+            const isAscending = document.getElementById('sortAsc').classList.contains('active');
+            const sortedData = [...tableData].sort((a, b) => {
+                if (isAscending) {
+                    return (a[column] || '').toString().localeCompare((b[column] || '').toString());
+                } else {
+                    return (b[column] || '').toString().localeCompare((a[column] || '').toString());
+                }
+            });
+            
+            renderTable(sortedData);
+        }
+
+        // Применение фильтров
+        function applyFilters() {
+            let filteredData = [...tableData];
+            
+            // Поиск по всем столбцам
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            if (searchTerm) {
+                filteredData = filteredData.filter(row => {
+                    return Object.values(row).some(value => 
+                        value && value.toString().toLowerCase().includes(searchTerm)
+                    );
+                });
+            }
+            
+            // Фильтр по диапазону
+            const rangeColumn = document.getElementById('rangeColumn').value;
+            const rangeFrom = document.getElementById('rangeFrom').value;
+            const rangeTo = document.getElementById('rangeTo').value;
+            
+            if (rangeColumn && (rangeFrom || rangeTo)) {
+                filteredData = filteredData.filter(row => {
+                    const value = parseFloat(row[rangeColumn]) || 0;
+                    const from = rangeFrom ? parseFloat(rangeFrom) : -Infinity;
+                    const to = rangeTo ? parseFloat(rangeTo) : Infinity;
+                    return value >= from && value <= to;
+                });
+            }
+            
+            // Сортировка
+            const sortColumn = document.getElementById('sortColumn').value;
+            const isAscending = document.getElementById('sortAsc').classList.contains('active');
+            
+            if (sortColumn) {
+                filteredData.sort((a, b) => {
+                    const aVal = a[sortColumn] || '';
+                    const bVal = b[sortColumn] || '';
+                    
+                    if (isAscending) {
+                        return aVal.toString().localeCompare(bVal.toString());
+                    } else {
+                        return bVal.toString().localeCompare(aVal.toString());
+                    }
+                });
+            }
+            
+            renderTable(filteredData);
+        }
+
+        // Сброс фильтров
+        function resetFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('rangeFrom').value = '';
+            document.getElementById('rangeTo').value = '';
+            
+            // Сброс всех чекбоксов столбцов
+            document.querySelectorAll('#columnList input[type="checkbox"]').forEach(checkbox => {
+                checkbox.checked = true;
+            });
+            
+            // Сброс сортировки
+            document.getElementById('sortAsc').classList.add('active');
+            document.getElementById('sortDesc').classList.remove('active');
+            
+            renderTable(tableData);
+        }
+
+        // Настройка обработчиков событий
+        function setupEventListeners() {
+            document.getElementById('applyFilters').addEventListener('click', applyFilters);
+            document.getElementById('resetFilters').addEventListener('click', resetFilters);
+            
+            // Поиск при вводе
+            document.getElementById('searchInput').addEventListener('input', applyFilters);
+            
+            // Обновление таблицы при изменении выбора столбцов
+            document.querySelectorAll('#columnList input[type="checkbox"]').forEach(checkbox => {
+                checkbox.addEventListener('change', applyFilters);
+            });
+            
+            // Применение фильтров при изменении диапазона
+            document.getElementById('rangeFrom').addEventListener('input', applyFilters);
+            document.getElementById('rangeTo').addEventListener('input', applyFilters);
+            
+            // Применение фильтров при изменении сортировки
+            document.getElementById('sortColumn').addEventListener('change', applyFilters);
+            document.getElementById('sortAsc').addEventListener('click', applyFilters);
+            document.getElementById('sortDesc').addEventListener('click', applyFilters);
+        }
+    </script>
+</body>
+</html>
