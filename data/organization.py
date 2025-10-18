@@ -19,8 +19,19 @@ class Organization(SqlAlchemyBase):
     website = Column(String(255))
     email = Column(String(255))
     general_info = Column(Text)
+    head_organization = Column(String(255))  # Головная организация
+    head_organization_inn = Column(String(12))  # ИНН головной организации
+    head_organization_relation_type = Column(String(100))  # Вид отношения головной организации
     
     # Связи с другими таблицами
     addresses = sqlalchemy.orm.relationship('Address', backref='organization', lazy=True)
     financial_indicators = sqlalchemy.orm.relationship('FinancialIndicator', backref='organization', lazy=True)
-    # ... другие связи
+    contacts = sqlalchemy.orm.relationship('Contact', backref='organization', lazy=True)
+    taxes = sqlalchemy.orm.relationship('Tax', backref='organization', lazy=True)
+    okveds = sqlalchemy.orm.relationship('Okved', backref='organization', lazy=True)
+    industries = sqlalchemy.orm.relationship('Industry', backref='organization', lazy=True)
+    company_sizes = sqlalchemy.orm.relationship('CompanySize', backref='organization', lazy=True)
+    supports = sqlalchemy.orm.relationship('Support', backref='organization', lazy=True)
+    investment_exports = sqlalchemy.orm.relationship('InvestmentExport', backref='organization', lazy=True)
+    property_lands = sqlalchemy.orm.relationship('PropertyLand', backref='organization', lazy=True)
+    productions = sqlalchemy.orm.relationship('Production', backref='organization', lazy=True)

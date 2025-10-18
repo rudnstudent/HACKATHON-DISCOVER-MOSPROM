@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+
+{% block title %}Главная - Moscow Industry Database{% endblock %}
+
+{% block content %}
+<!-- Герой секция -->
+<section class="hero-section gradient-bg text-white py-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h1 class="display-4 fw-bold mb-4 fade-in-up">
+                    База данных промышленных предприятий Москвы
+                </h1>
+                <p class="lead mb-4 fade-in-up">
+                    Комплексная система для работы с данными о промышленных предприятиях, 
+                    их финансовых показателях, налоговых данных и контактной информации.
+                </p>
+                <div class="d-flex gap-3 fade-in-up">
+                    <a href="{{ url_for('api_docs') }}" class="btn btn-light btn-lg">
+                        <i class="fas fa-book me-2"></i>API Документация
+                    </a>
+                    <a href="{{ url_for('about') }}" class="btn btn-outline-light btn-lg">
+                        <i class="fas fa-info-circle me-2"></i>Узнать больше
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-6 text-center">
+                <div class="hero-image">
+                    <i class="fas fa-industry" style="font-size: 15rem; opacity: 0.3;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Статистика -->
+<section class="py-5">
+    <div class="container">
+        <div class="row text-center mb-5">
+            <div class="col-12">
+                <h2 class="gradient-text">Статистика базы данных</h2>
+                <p class="lead">Актуальные данные о промышленных предприятиях</p>
+            </div>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-3 col-sm-6">
+                <div class="card stats-card text-center h-100">
+                    <div class="card-body">
+                        <div class="feature-icon">
+                            <i class="fas fa-building"></i>
+                        </div>
+                        <h3 class="gradient-text">1000+</h3>
+                        <p class="text-muted">Организаций</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="card stats-card text-center h-100">
+                    <div class="card-body">
+                        <div class="feature-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <h3 class="gradient-text">5000+</h3>
+                        <p class="text-muted">Финансовых показателей</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="card stats-card text-center h-100">
+                    <div class="card-body">
+                        <div class="feature-icon">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                        <h3 class="gradient-text">12</h3>
+                        <p class="text-muted">Административных округов</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="card stats-card text-center h-100">
+                    <div class="card-body">
+                        <div class="feature-icon">
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                        <h3 class="gradient-text">5</h3>
+                        <p class="text-muted">Лет данных</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Возможности API -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="row mb-5">
+            <div class="col-12 text-center">
+                <h2 class="gradient-text">Возможности API</h2>
+                <p class="lead">Полный набор инструментов для работы с данными</p>
+            </div>
+        </div>
+        <div class="row g-4">
+            <div class="col-lg-4 col-md-6">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <div class="feature-icon">
+                            <i class="fas fa-database"></i>
+                        </div>
+                        <h5 class="card-title">Организации</h5>
+                        <p class="card-text">
+                            Полная информация об организациях, включая статусы, 
+                            контактные данные и общую информацию.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <div class="feature-icon">
+                            <i class="fas fa-chart-bar"></i>
+                        </div>
+                        <h5 class="card-title">Финансовые показатели</h5>
+                        <p class="card-text">
+                            Доходы, прибыль, количество сотрудников и 
+                            заработная плата по годам.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <div class="feature-icon">
+                            <i class="fas fa-receipt"></i>
+                        </div>
+                        <h5 class="card-title">Налоговые данные</h5>
+                        <p class="card-text">
+                            Информация о налогах, уплаченных в бюджет 
+                            Москвы по различным категориям.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <div class="feature-icon">
+                            <i class="fas fa-map"></i>
+                        </div>
+                        <h5 class="card-title">Адресная информация</h5>
+                        <p class="card-text">
+                            Полные адреса, координаты, районы и округа 
+                            расположения предприятий.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <div class="feature-icon">
+                            <i class="fas fa-industry"></i>
+                        </div>
+                        <h5 class="card-title">Отраслевая информация</h5>
+                        <p class="card-text">
+                            Коды ОКВЭД, основные и дополнительные отрасли, 
+                            подотрасли деятельности.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <div class="feature-icon">
+                            <i class="fas fa-handshake"></i>
+                        </div>
+                        <h5 class="card-title">Поддержка</h5>
+                        <p class="card-text">
+                            Информация о полученной поддержке, специальных 
+                            статусах и участии в программах.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Загрузка файлов -->
+<section class="py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header text-center">
+                        <h4 class="mb-0">
+                            <i class="fas fa-upload me-2"></i>
+                            Загрузка данных
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <form action="{{ url_for('upload_file') }}" method="post" enctype="multipart/form-data">
+                            <div class="mb-3">
+                                <label for="file" class="form-label">Выберите файл для загрузки</label>
+                                <input type="file" class="form-control" id="file" name="file" accept=".xlsx,.xls,.csv">
+                                <div class="form-text">
+                                    Поддерживаемые форматы: Excel (.xlsx, .xls), CSV (.csv)
+                                </div>
+                            </div>
+                            <div class="text-center">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-upload me-2"></i>
+                                    Загрузить файл
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA секция -->
+<section class="py-5 gradient-bg text-white">
+    <div class="container text-center">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <h2 class="mb-4">Готовы начать работу с API?</h2>
+                <p class="lead mb-4">
+                    Получите доступ к полной документации API и начните интегрировать 
+                    данные о промышленных предприятиях Москвы в ваши проекты.
+                </p>
+                <a href="{{ url_for('api_docs') }}" class="btn btn-light btn-lg me-3">
+                    <i class="fas fa-book me-2"></i>
+                    Открыть документацию
+                </a>
+                <a href="{{ url_for('contact') }}" class="btn btn-outline-light btn-lg">
+                    <i class="fas fa-envelope me-2"></i>
+                    Связаться с нами
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Анимация появления элементов при скролле
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('fade-in-up');
+            }
+        });
+    }, observerOptions);
+
+    // Наблюдаем за всеми карточками
+    document.querySelectorAll('.card').forEach(card => {
+        observer.observe(card);
+    });
+</script>
+{% endblock %}
