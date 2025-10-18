@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Company Comparison</title>
+</head>
+<body>
+    <h1>Test Company Comparison API</h1>
+    
+    <div id="results"></div>
+    
+    <script>
+        async function testAPI() {
+            const resultsDiv = document.getElementById('results');
+            
+            try {
+                // Test 1: Load tables
+                console.log('Testing tables API...');
+                const tablesResponse = await fetch('/api/tables');
+                const tablesData = await tablesResponse.json();
+                console.log('Tables:', tablesData);
+                
+                resultsDiv.innerHTML += '<h2>Tables loaded:</h2><ul>';
+                for (const table of tablesData.tables) {
+                    resultsDiv.innerHTML += `<li>${table.name} - ${table.display_name}</li>`;
+                }
+                resultsDiv.innerHTML += '</ul>';
+                
+                // Test 2: Load columns for organizations
+                console.log('Testing columns API for organizations...');
+                const columnsResponse = await fetch('/api/tables/organizations/columns');
+                const columnsData = await columnsResponse.json();
+                console.log('Columns for organizations:', columnsData);
+                
+                resultsDiv.innerHTML += '<h2>Columns for organizations:</h2><ul>';
+                for (const column of columnsData.columns) {
+                    resultsDiv.innerHTML += `<li>${column.name} (${column.python_type})</li>`;
+                }
+                resultsDiv.innerHTML += '</ul>';
+                
+                // Test 3: Load columns for financial-indicators
+                console.log('Testing columns API for financial-indicators...');
+                const finColumnsResponse = await fetch('/api/tables/financial-indicators/columns');
+                const finColumnsData = await finColumnsResponse.json();
+                console.log('Columns for financial-indicators:', finColumnsData);
+                
+                resultsDiv.innerHTML += '<h2>Columns for financial-indicators:</h2><ul>';
+                for (const column of finColumnsData.columns) {
+                    resultsDiv.innerHTML += `<li>${column.name} (${column.python_type})</li>`;
+                }
+                resultsDiv.innerHTML += '</ul>';
+                
+                // Test 4: Search companies
+                console.log('Testing company search...');
+                const searchResponse = await fetch('/api/companies/search?q=Test&limit=5');
+                const searchData = await searchResponse.json();
+                console.log('Search results:', searchData);
+                
+                resultsDiv.innerHTML += '<h2>Company search results:</h2><ul>';
+                for (const company of searchData.companies) {
+                    resultsDiv.innerHTML += `<li>${company.name} (ИНН: ${company.inn})</li>`;
+                }
+                resultsDiv.innerHTML += '</ul>';
+                
+                // Test 5: Compare companies
+                if (searchData.companies.length > 0) {
+                    console.log('Testing company comparison...');
+                    const compareData = {
+                        company_ids: [searchData.companies[0].id],
+                        selected_fields: {
+                            organizations: ['name', 'inn', 'spark_status']
+                        }
+                    };
+                    
+                    const compareResponse = await fetch('/api/compare/companies', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(compareData)
+                    });
+                    const compareResult = await compareResponse.json();
+                    console.log('Comparison result:', compareResult);
+                    
+                    resultsDiv.innerHTML += '<h2>Comparison result:</h2><pre>' + JSON.stringify(compareResult, null, 2) + '</pre>';
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                resultsDiv.innerHTML += '<h2>Error:</h2><p style="color: red;">' + error.message + '</p>';
+            }
+        }
+        
+        // Run test when page loads
+        window.onload = testAPI;
+    </script>
+</body>
+</html>

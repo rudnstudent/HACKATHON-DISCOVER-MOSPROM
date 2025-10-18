@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title %}Внутренняя ошибка сервера - Moscow Industry Database{% endblock %}
+
+{% block content %}
+<section class="py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 text-center">
+                <div class="error-content">
+                    <!-- Большая иконка ошибки -->
+                    <div class="error-icon mb-4">
+                        <i class="fas fa-server" style="font-size: 8rem; color: var(--primary-color);"></i>
+                    </div>
+                    
+                    <!-- Код ошибки -->
+                    <h1 class="display-1 fw-bold gradient-text mb-3">500</h1>
+                    
+                    <!-- Заголовок -->
+                    <h2 class="h3 mb-4">Внутренняя ошибка сервера</h2>
+                    
+                    <!-- Описание -->
+                    <p class="lead mb-4">
+                        Произошла внутренняя ошибка сервера. Мы уже работаем над её устранением.
+                    </p>
+                    
+                    <!-- Дополнительная информация -->
+                    <div class="alert alert-danger mb-4">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Что произошло:</strong>
+                        <ul class="list-unstyled mt-2 mb-0">
+                            <li>• Временная техническая проблема на сервере</li>
+                            <li>• Ошибка в обработке вашего запроса</li>
+                            <li>• Проблема с базой данных</li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Рекомендации -->
+                    <div class="alert alert-info mb-4">
+                        <i class="fas fa-lightbulb me-2"></i>
+                        <strong>Рекомендации:</strong>
+                        <ul class="list-unstyled mt-2 mb-0">
+                            <li>• Попробуйте обновить страницу через несколько минут</li>
+                            <li>• Проверьте правильность введенных данных</li>
+                            <li>• Обратитесь в службу поддержки, если проблема повторяется</li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Кнопки действий -->
+                    <div class="d-flex flex-column flex-sm-row gap-3 justify-content-center">
+                        <button onclick="window.location.reload()" class="btn btn-primary btn-lg">
+                            <i class="fas fa-redo me-2"></i>
+                            Обновить страницу
+                        </button>
+                        <a href="{{ url_for('index') }}" class="btn btn-secondary btn-lg">
+                            <i class="fas fa-home me-2"></i>
+                            На главную
+                        </a>
+                        <a href="{{ url_for('contact') }}" class="btn btn-outline-primary btn-lg">
+                            <i class="fas fa-envelope me-2"></i>
+                            Сообщить об ошибке
+                        </a>
+                    </div>
+                    
+                    <!-- Статус системы -->
+                    <div class="mt-5">
+                        <h5 class="mb-3">Статус системы:</h5>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-server text-success mb-2"></i>
+                                        <h6 class="card-title">API</h6>
+                                        <span class="badge bg-success">Работает</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-database text-warning mb-2"></i>
+                                        <h6 class="card-title">База данных</h6>
+                                        <span class="badge bg-warning">Проблемы</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-globe text-success mb-2"></i>
+                                        <h6 class="card-title">Сеть</h6>
+                                        <span class="badge bg-success">Работает</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Контактная информация -->
+                    <div class="mt-5">
+                        <h5 class="mb-3">Нужна помощь?</h5>
+                        <p class="text-muted mb-3">
+                            Если ошибка повторяется, обратитесь в службу поддержки:
+                        </p>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-envelope text-primary mb-2"></i>
+                                        <h6 class="card-title">Email</h6>
+                                        <p class="card-text small">
+                                            <a href="mailto:support@moscow-industry.ru" class="text-decoration-none">
+                                                support@moscow-industry.ru
+                                            </a>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-clock text-primary mb-2"></i>
+                                        <h6 class="card-title">Время ответа</h6>
+                                        <p class="card-text small">
+                                            В течение 24 часов
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Анимация появления элементов
+    document.addEventListener('DOMContentLoaded', function() {
+        const elements = document.querySelectorAll('.error-content > *');
+        elements.forEach((element, index) => {
+            element.style.opacity = '0';
+            element.style.transform = 'translateY(20px)';
+            
+            setTimeout(() => {
+                element.style.transition = 'all 0.6s ease';
+                element.style.opacity = '1';
+                element.style.transform = 'translateY(0)';
+            }, index * 100);
+        });
+    });
+    
+    // Автоматическое обновление статуса системы
+    function updateSystemStatus() {
+        // Здесь можно добавить AJAX запрос для проверки статуса
+        console.log('Checking system status...');
+    }
+    
+    // Проверяем статус каждые 30 секунд
+    setInterval(updateSystemStatus, 30000);
+</script>
+{% endblock %}

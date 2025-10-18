@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}Страница не найдена - Moscow Industry Database{% endblock %}
+
+{% block content %}
+<section class="py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 text-center">
+                <div class="error-content">
+                    <!-- Большая иконка ошибки -->
+                    <div class="error-icon mb-4">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 8rem; color: var(--accent-color);"></i>
+                    </div>
+                    
+                    <!-- Код ошибки -->
+                    <h1 class="display-1 fw-bold gradient-text mb-3">404</h1>
+                    
+                    <!-- Заголовок -->
+                    <h2 class="h3 mb-4">Страница не найдена</h2>
+                    
+                    <!-- Описание -->
+                    <p class="lead mb-4">
+                        К сожалению, запрашиваемая страница не существует или была перемещена.
+                    </p>
+                    
+                    <!-- Дополнительная информация -->
+                    <div class="alert alert-info mb-4">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Возможные причины:</strong>
+                        <ul class="list-unstyled mt-2 mb-0">
+                            <li>• Неправильно введен адрес страницы</li>
+                            <li>• Страница была удалена или перемещена</li>
+                            <li>• Временные технические проблемы</li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Кнопки действий -->
+                    <div class="d-flex flex-column flex-sm-row gap-3 justify-content-center">
+                        <a href="{{ url_for('index') }}" class="btn btn-primary btn-lg">
+                            <i class="fas fa-home me-2"></i>
+                            На главную
+                        </a>
+                        <a href="{{ url_for('api_docs') }}" class="btn btn-secondary btn-lg">
+                            <i class="fas fa-book me-2"></i>
+                            API Документация
+                        </a>
+                        <a href="{{ url_for('contact') }}" class="btn btn-outline-primary btn-lg">
+                            <i class="fas fa-envelope me-2"></i>
+                            Связаться с нами
+                        </a>
+                    </div>
+                    
+                    <!-- Полезные ссылки -->
+                    <div class="mt-5">
+                        <h5 class="mb-3">Полезные ссылки:</h5>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <a href="{{ url_for('index') }}" class="text-decoration-none">
+                                    <div class="card h-100">
+                                        <div class="card-body text-center">
+                                            <i class="fas fa-home text-primary mb-2"></i>
+                                            <h6 class="card-title">Главная страница</h6>
+                                            <p class="card-text small text-muted">Вернуться на главную</p>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                            <div class="col-md-4">
+                                <a href="{{ url_for('about') }}" class="text-decoration-none">
+                                    <div class="card h-100">
+                                        <div class="card-body text-center">
+                                            <i class="fas fa-info-circle text-primary mb-2"></i>
+                                            <h6 class="card-title">О проекте</h6>
+                                            <p class="card-text small text-muted">Узнать больше о системе</p>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                            <div class="col-md-4">
+                                <a href="{{ url_for('api_docs') }}" class="text-decoration-none">
+                                    <div class="card h-100">
+                                        <div class="card-body text-center">
+                                            <i class="fas fa-book text-primary mb-2"></i>
+                                            <h6 class="card-title">API Документация</h6>
+                                            <p class="card-text small text-muted">Изучить API</p>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Анимация появления элементов
+    document.addEventListener('DOMContentLoaded', function() {
+        const elements = document.querySelectorAll('.error-content > *');
+        elements.forEach((element, index) => {
+            element.style.opacity = '0';
+            element.style.transform = 'translateY(20px)';
+            
+            setTimeout(() => {
+                element.style.transition = 'all 0.6s ease';
+                element.style.opacity = '1';
+                element.style.transform = 'translateY(0)';
+            }, index * 100);
+        });
+    });
+</script>
+{% endblock %}

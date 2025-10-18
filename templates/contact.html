@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+
+{% block title %}Контакты - Moscow Industry Database{% endblock %}
+
+{% block content %}
+<!-- Заголовок страницы -->
+<section class="py-5 gradient-bg text-white">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center">
+                <h1 class="display-4 fw-bold mb-4">Свяжитесь с нами</h1>
+                <p class="lead">
+                    У вас есть вопросы о работе с API или нужна помощь? 
+                    Мы всегда готовы помочь!
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Форма обратной связи -->
+<section class="py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                {% if success %}
+                <div class="alert alert-success text-center mb-4">
+                    <i class="fas fa-check-circle me-2"></i>
+                    <strong>Спасибо, {{ name }}!</strong> Ваше сообщение успешно отправлено. 
+                    Мы свяжемся с вами в ближайшее время.
+                </div>
+                {% endif %}
+                
+                <div class="card">
+                    <div class="card-header text-center">
+                        <h4 class="mb-0">
+                            <i class="fas fa-envelope me-2"></i>
+                            Форма обратной связи
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <form method="post" action="{{ url_for('contact') }}">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="name" class="form-label">Имя *</label>
+                                    <input type="text" class="form-control" id="name" name="name" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="email" class="form-label">Email *</label>
+                                    <input type="email" class="form-control" id="email" name="email" required>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="message" class="form-label">Сообщение *</label>
+                                <textarea class="form-control" id="message" name="message" rows="5" 
+                                          placeholder="Опишите ваш вопрос или предложение..." required></textarea>
+                            </div>
+                            <div class="text-center">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-paper-plane me-2"></i>
+                                    Отправить сообщение
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Контактная информация -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center mb-5">
+                <h2 class="gradient-text">Дополнительная информация</h2>
+                <p class="lead">Другие способы связи с нами</p>
+            </div>
+        </div>
+        <div class="row g-4">
+            <div class="col-lg-4 col-md-6">
+                <div class="card text-center h-100">
+                    <div class="card-body">
+                        <div class="feature-icon">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <h5 class="card-title">Email</h5>
+                        <p class="card-text">
+                            <a href="mailto:support@moscow-industry.ru" class="text-decoration-none">
+                                support@moscow-industry.ru
+                            </a>
+                        </p>
+                        <small class="text-muted">
+                            Ответим в течение 24 часов
+                        </small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6">
+                <div class="card text-center h-100">
+                    <div class="card-body">
+                        <div class="feature-icon">
+                            <i class="fas fa-book"></i>
+                        </div>
+                        <h5 class="card-title">API Документация</h5>
+                        <p class="card-text">
+                            <a href="{{ url_for('api_docs') }}" class="text-decoration-none">
+                                Открыть документацию
+                            </a>
+                        </p>
+                        <small class="text-muted">
+                            Полное описание всех эндпоинтов
+                        </small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6">
+                <div class="card text-center h-100">
+                    <div class="card-body">
+                        <div class="feature-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <h5 class="card-title">Время работы</h5>
+                        <p class="card-text">
+                            Пн-Пт: 9:00 - 18:00<br>
+                            Сб-Вс: 10:00 - 16:00
+                        </p>
+                        <small class="text-muted">
+                            Московское время
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- FAQ секция -->
+<section class="py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center mb-5">
+                <h2 class="gradient-text">Часто задаваемые вопросы</h2>
+                <p class="lead">Ответы на популярные вопросы</p>
+            </div>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="accordion" id="faqAccordion">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="faq1">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse" 
+                                    data-bs-target="#collapse1" aria-expanded="true" aria-controls="collapse1">
+                                Как получить доступ к API?
+                            </button>
+                        </h2>
+                        <div id="collapse1" class="accordion-collapse collapse show" 
+                             aria-labelledby="faq1" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                API доступен без регистрации. Просто отправляйте HTTP-запросы 
+                                на соответствующие эндпоинты согласно документации.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="faq2">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                    data-bs-target="#collapse2" aria-expanded="false" aria-controls="collapse2">
+                                Какие форматы данных поддерживаются?
+                            </button>
+                        </h2>
+                        <div id="collapse2" class="accordion-collapse collapse" 
+                             aria-labelledby="faq2" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                API поддерживает JSON формат для всех запросов и ответов. 
+                                Для загрузки данных поддерживаются Excel (.xlsx, .xls) и CSV файлы.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="faq3">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                    data-bs-target="#collapse3" aria-expanded="false" aria-controls="collapse3">
+                                Как часто обновляются данные?
+                            </button>
+                        </h2>
+                        <div id="collapse3" class="accordion-collapse collapse" 
+                             aria-labelledby="faq3" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                Данные обновляются ежемесячно. Актуальная информация о последнем 
+                                обновлении доступна в метаданных API.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="faq4">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                    data-bs-target="#collapse4" aria-expanded="false" aria-controls="collapse4">
+                                Есть ли ограничения на количество запросов?
+                            </button>
+                        </h2>
+                        <div id="collapse4" class="accordion-collapse collapse" 
+                             aria-labelledby="faq4" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                В настоящее время ограничений нет, но мы рекомендуем не превышать 
+                                1000 запросов в минуту для стабильной работы сервиса.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Валидация формы
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const name = document.getElementById('name').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const message = document.getElementById('message').value.trim();
+        
+        if (!name || !email || !message) {
+            e.preventDefault();
+            alert('Пожалуйста, заполните все обязательные поля');
+            return;
+        }
+        
+        // Простая валидация email
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            e.preventDefault();
+            alert('Пожалуйста, введите корректный email адрес');
+            return;
+        }
+    });
+</script>
+{% endblock %}

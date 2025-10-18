@@ -1,0 +1,776 @@
+{% extends "base.html" %}
+
+{% block title %}Динамический фильтр - Moscow Industry Database{% endblock %}
+
+{% block content %}
+<!-- Заголовок страницы -->
+<section class="py-5 gradient-bg text-white">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center">
+                <h1 class="display-4 fw-bold mb-4">Динамический фильтр</h1>
+                <p class="lead">
+                    Универсальная система фильтрации для всех таблиц базы данных
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Выбор таблицы -->
+<section class="py-5">
+    <div class="container">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    <i class="fas fa-database me-2"></i>
+                    Выбор таблицы
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <label for="tableSelect" class="form-label">Выберите таблицу для фильтрации</label>
+                        <select class="form-select" id="tableSelect" size="5">
+                            <option value="">Загрузка таблиц...</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary" id="loadTableBtn" disabled>
+                                <i class="fas fa-table me-2"></i>
+                                Загрузить таблицу
+                            </button>
+                            <button class="btn btn-info" id="loadStatsBtn" disabled>
+                                <i class="fas fa-chart-bar me-2"></i>
+                                Статистика
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Панель фильтров -->
+<section class="py-5" id="filtersSection" style="display: none;">
+    <div class="container">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">
+                    <i class="fas fa-filter me-2"></i>
+                    Панель фильтрации
+                </h4>
+                <span class="badge bg-primary" id="currentTableName">Таблица не выбрана</span>
+            </div>
+            <div class="card-body">
+                <!-- Общий поиск -->
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <label for="generalSearch" class="form-label">Общий поиск</label>
+                        <input type="text" class="form-control" id="generalSearch" 
+                               placeholder="Поиск по всем текстовым полям...">
+                    </div>
+                </div>
+
+                <!-- Динамические фильтры -->
+                <div id="dynamicFilters">
+                    <!-- Фильтры будут загружены динамически -->
+                </div>
+
+                <!-- Сортировка и пагинация -->
+                <div class="row g-3 mt-3">
+                    <div class="col-md-4">
+                        <label for="sortBy" class="form-label">Сортировка по полю</label>
+                        <select class="form-select" id="sortBy">
+                            <option value="">Без сортировки</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="sortOrder" class="form-label">Порядок сортировки</label>
+                        <select class="form-select" id="sortOrder">
+                            <option value="asc">По возрастанию</option>
+                            <option value="desc">По убыванию</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="perPage" class="form-label">Записей на странице</label>
+                        <select class="form-select" id="perPage">
+                            <option value="10">10</option>
+                            <option value="25" selected>25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Кнопки управления -->
+                <div class="row mt-4">
+                    <div class="col-12 text-center">
+                        <button type="button" class="btn btn-primary btn-lg me-3" id="searchBtn">
+                            <i class="fas fa-search me-2"></i>
+                            Поиск
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-lg me-3" id="clearBtn">
+                            <i class="fas fa-eraser me-2"></i>
+                            Очистить
+                        </button>
+                        <button type="button" class="btn btn-success btn-lg me-3" id="exportBtn">
+                            <i class="fas fa-download me-2"></i>
+                            Экспорт
+                        </button>
+                        <button type="button" class="btn btn-info btn-lg" id="copyUrlBtn">
+                            <i class="fas fa-copy me-2"></i>
+                            Копировать URL
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Результаты -->
+<section class="py-5 bg-light" id="resultsSection" style="display: none;">
+    <div class="container">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">
+                    <i class="fas fa-table me-2"></i>
+                    Результаты поиска
+                </h4>
+                <div class="d-flex align-items-center">
+                    <span class="badge bg-primary me-2" id="resultsCount">0 записей</span>
+                    <span class="badge bg-info me-2" id="tableInfo">Таблица: -</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Загрузка -->
+                <div id="loadingSpinner" class="text-center" style="display: none;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Загрузка...</span>
+                    </div>
+                    <p class="mt-2">Загрузка данных...</p>
+                </div>
+
+                <!-- Ошибка -->
+                <div id="errorMessage" class="alert alert-danger" style="display: none;">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <span id="errorText"></span>
+                </div>
+
+                <!-- Результаты -->
+                <div id="resultsContent">
+                    <!-- Таблица будет загружена здесь -->
+                </div>
+
+                <!-- Пагинация -->
+                <nav id="paginationNav" style="display: none;">
+                    <ul class="pagination justify-content-center" id="paginationList">
+                        <!-- Элементы пагинации будут добавлены здесь -->
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Статистика -->
+<section class="py-5" id="statsSection" style="display: none;">
+    <div class="container">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    <i class="fas fa-chart-bar me-2"></i>
+                    Статистика по таблице
+                </h4>
+            </div>
+            <div class="card-body" id="statsContent">
+                <!-- Статистика будет загружена здесь -->
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let currentTable = null;
+    let currentColumns = [];
+    let currentData = null;
+    let currentUrl = '';
+
+    // Элементы DOM
+    const tableSelect = document.getElementById('tableSelect');
+    const loadTableBtn = document.getElementById('loadTableBtn');
+    const loadStatsBtn = document.getElementById('loadStatsBtn');
+    const filtersSection = document.getElementById('filtersSection');
+    const resultsSection = document.getElementById('resultsSection');
+    const statsSection = document.getElementById('statsSection');
+    const dynamicFilters = document.getElementById('dynamicFilters');
+    const sortBySelect = document.getElementById('sortBy');
+    const searchBtn = document.getElementById('searchBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const exportBtn = document.getElementById('exportBtn');
+    const copyUrlBtn = document.getElementById('copyUrlBtn');
+
+    // Инициализация
+    loadAvailableTables();
+
+    // Обработчики событий
+    tableSelect.addEventListener('change', function() {
+        loadTableBtn.disabled = !this.value;
+        loadStatsBtn.disabled = !this.value;
+    });
+
+    loadTableBtn.addEventListener('click', loadTableColumns);
+    loadStatsBtn.addEventListener('click', loadTableStats);
+    searchBtn.addEventListener('click', performSearch);
+    clearBtn.addEventListener('click', clearFilters);
+    exportBtn.addEventListener('click', exportData);
+    copyUrlBtn.addEventListener('click', copyUrl);
+
+    // Загрузка доступных таблиц
+    async function loadAvailableTables() {
+        try {
+            const response = await fetch('/api/tables');
+            const data = await response.json();
+            
+            tableSelect.innerHTML = '';
+            data.tables.forEach(table => {
+                const option = document.createElement('option');
+                option.value = table.name;
+                option.textContent = `${table.display_name} (${table.columns_count} столбцов)`;
+                tableSelect.appendChild(option);
+            });
+        } catch (error) {
+            showError('Ошибка загрузки списка таблиц: ' + error.message);
+        }
+    }
+
+    // Загрузка метаданных столбцов
+    async function loadTableColumns() {
+        const tableName = tableSelect.value;
+        if (!tableName) return;
+
+        try {
+            showLoading();
+            const response = await fetch(`/api/tables/${tableName}/columns`);
+            const data = await response.json();
+            
+            currentTable = tableName;
+            currentColumns = data.columns;
+            
+            document.getElementById('currentTableName').textContent = data.model_name;
+            filtersSection.style.display = 'block';
+            
+            buildDynamicFilters(data.columns);
+            buildSortOptions(data.columns);
+            
+            // Скрываем загрузку после успешной загрузки
+            hideLoading();
+            
+        } catch (error) {
+            showError('Ошибка загрузки метаданных: ' + error.message);
+        }
+    }
+
+    // Загрузка статистики
+    async function loadTableStats() {
+        const tableName = tableSelect.value;
+        if (!tableName) return;
+
+        try {
+            const response = await fetch(`/api/tables/${tableName}/stats`);
+            const data = await response.json();
+            
+            displayStats(data);
+            statsSection.style.display = 'block';
+            
+        } catch (error) {
+            showError('Ошибка загрузки статистики: ' + error.message);
+        }
+    }
+
+    // Построение динамических фильтров
+    function buildDynamicFilters(columns) {
+        dynamicFilters.innerHTML = '';
+        
+        columns.forEach(column => {
+            const filterDiv = document.createElement('div');
+            filterDiv.className = 'row g-3 mb-3';
+            
+            let filterHtml = `
+                <div class="col-md-3">
+                    <label class="form-label">${column.name}</label>
+                    <small class="text-muted d-block">${column.python_type}</small>
+                </div>
+                <div class="col-md-9">
+            `;
+
+            if (column.filter_type === 'numeric') {
+                filterHtml += `
+                    <div class="row g-2">
+                        <div class="col-4">
+                            <input type="number" class="form-control" 
+                                   id="${column.name}_min" 
+                                   placeholder="От" 
+                                   step="any">
+                        </div>
+                        <div class="col-4">
+                            <input type="number" class="form-control" 
+                                   id="${column.name}_max" 
+                                   placeholder="До" 
+                                   step="any">
+                        </div>
+                        <div class="col-4">
+                            <input type="number" class="form-control" 
+                                   id="${column.name}" 
+                                   placeholder="Точное значение" 
+                                   step="any">
+                        </div>
+                    </div>
+                `;
+            } else if (column.filter_type === 'text') {
+                filterHtml += `
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <input type="text" class="form-control" 
+                                   id="${column.name}_like" 
+                                   placeholder="Поиск по подстроке">
+                        </div>
+                        <div class="col-6">
+                            <input type="text" class="form-control" 
+                                   id="${column.name}" 
+                                   placeholder="Точное значение">
+                        </div>
+                    </div>
+                `;
+            } else if (column.filter_type === 'date') {
+                filterHtml += `
+                    <div class="row g-2">
+                        <div class="col-4">
+                            <input type="date" class="form-control" 
+                                   id="${column.name}_from" 
+                                   placeholder="От">
+                        </div>
+                        <div class="col-4">
+                            <input type="date" class="form-control" 
+                                   id="${column.name}_to" 
+                                   placeholder="До">
+                        </div>
+                        <div class="col-4">
+                            <input type="date" class="form-control" 
+                                   id="${column.name}" 
+                                   placeholder="Точная дата">
+                        </div>
+                    </div>
+                `;
+            } else if (column.filter_type === 'boolean') {
+                filterHtml += `
+                    <select class="form-select" id="${column.name}">
+                        <option value="">Все</option>
+                        <option value="true">Да</option>
+                        <option value="false">Нет</option>
+                    </select>
+                `;
+            } else {
+                filterHtml += `
+                    <input type="text" class="form-control" 
+                           id="${column.name}" 
+                           placeholder="Значение">
+                `;
+            }
+
+            filterHtml += `</div></div>`;
+            filterDiv.innerHTML = filterHtml;
+            dynamicFilters.appendChild(filterDiv);
+        });
+    }
+
+    // Построение опций сортировки
+    function buildSortOptions(columns) {
+        sortBySelect.innerHTML = '<option value="">Без сортировки</option>';
+        columns.forEach(column => {
+            const option = document.createElement('option');
+            option.value = column.name;
+            option.textContent = column.name;
+            sortBySelect.appendChild(option);
+        });
+    }
+
+    // Выполнение поиска
+    async function performSearch() {
+        if (!currentTable) return;
+
+        const params = new URLSearchParams();
+        
+        // Общий поиск
+        const generalSearch = document.getElementById('generalSearch').value.trim();
+        if (generalSearch) {
+            params.append('search', generalSearch);
+        }
+
+        // Фильтры по столбцам
+        currentColumns.forEach(column => {
+            const exactValue = document.getElementById(column.name).value.trim();
+            if (exactValue) {
+                params.append(column.name, exactValue);
+            }
+
+            if (column.filter_type === 'numeric') {
+                const minValue = document.getElementById(`${column.name}_min`).value.trim();
+                const maxValue = document.getElementById(`${column.name}_max`).value.trim();
+                if (minValue) params.append(`${column.name}_min`, minValue);
+                if (maxValue) params.append(`${column.name}_max`, maxValue);
+            } else if (column.filter_type === 'text') {
+                const likeValue = document.getElementById(`${column.name}_like`).value.trim();
+                if (likeValue) params.append(`${column.name}_like`, likeValue);
+            } else if (column.filter_type === 'date') {
+                const fromValue = document.getElementById(`${column.name}_from`).value.trim();
+                const toValue = document.getElementById(`${column.name}_to`).value.trim();
+                if (fromValue) params.append(`${column.name}_from`, fromValue);
+                if (toValue) params.append(`${column.name}_to`, toValue);
+            }
+        });
+
+        // Сортировка
+        const sortBy = sortBySelect.value;
+        const sortOrder = document.getElementById('sortOrder').value;
+        if (sortBy) {
+            params.append('sort_by', sortBy);
+            params.append('sort_order', sortOrder);
+        }
+
+        // Пагинация
+        const page = document.getElementById('page')?.value || 1;
+        const perPage = document.getElementById('perPage').value;
+        params.append('page', page);
+        params.append('per_page', perPage);
+
+        // Формируем URL
+        currentUrl = `/api/tables/${currentTable}/data?${params.toString()}`;
+
+        // Показываем загрузку
+        showLoading();
+
+        try {
+            const response = await fetch(currentUrl);
+            const data = await response.json();
+
+            if (data.error) {
+                showError(data.error);
+                return;
+            }
+
+            currentData = data;
+            displayResults(data);
+            updatePagination(data);
+            resultsSection.style.display = 'block';
+
+        } catch (error) {
+            showError('Ошибка выполнения запроса: ' + error.message);
+        }
+    }
+
+    // Отображение результатов
+    function displayResults(data) {
+        // Скрываем загрузку
+        hideLoading();
+        
+        if (data.items.length === 0) {
+            document.getElementById('resultsContent').innerHTML = `
+                <div class="alert alert-warning text-center">
+                    <i class="fas fa-search me-2"></i>
+                    Записи не найдены
+                </div>
+            `;
+            document.getElementById('resultsCount').textContent = '0 записей';
+            document.getElementById('tableInfo').textContent = `Таблица: ${data.model_name}`;
+            return;
+        }
+
+        // Обновляем счетчики
+        document.getElementById('resultsCount').textContent = `${data.items.length} из ${data.total} записей`;
+        document.getElementById('tableInfo').textContent = `Таблица: ${data.model_name}`;
+
+        // Создаем таблицу
+        let tableHtml = `
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+        `;
+
+        // Заголовки столбцов
+        Object.keys(data.items[0]).forEach(key => {
+            if (key !== 'id') {
+                tableHtml += `<th>${key}</th>`;
+            }
+        });
+        tableHtml += `</tr></thead><tbody>`;
+
+        // Данные
+        data.items.forEach(item => {
+            tableHtml += `<tr>`;
+            Object.entries(item).forEach(([key, value]) => {
+                if (key !== 'id') {
+                    let displayValue = value;
+                    if (value === null || value === undefined) {
+                        displayValue = '-';
+                    } else if (typeof value === 'string' && value.includes('T') && value.includes('Z')) {
+                        // Форматирование дат
+                        try {
+                            displayValue = new Date(value).toLocaleDateString('ru-RU');
+                        } catch (e) {
+                            displayValue = value;
+                        }
+                    }
+                    tableHtml += `<td>${displayValue}</td>`;
+                }
+            });
+            tableHtml += `</tr>`;
+        });
+
+        tableHtml += `</tbody></table></div>`;
+        document.getElementById('resultsContent').innerHTML = tableHtml;
+    }
+
+    // Отображение статистики
+    function displayStats(data) {
+        let statsHtml = `
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body text-center">
+                            <h3>${data.total_records}</h3>
+                            <p>Всего записей</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        if (Object.keys(data.numeric_stats).length > 0) {
+            statsHtml += `
+                <h5 class="mt-4">Статистика по числовым полям</h5>
+                <div class="row">
+            `;
+            Object.entries(data.numeric_stats).forEach(([field, stats]) => {
+                statsHtml += `
+                    <div class="col-md-6 mb-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6>${field}</h6>
+                                <p class="mb-1">Минимум: ${stats.min}</p>
+                                <p class="mb-1">Максимум: ${stats.max}</p>
+                                <small class="text-muted">Тип: ${stats.type}</small>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            statsHtml += `</div>`;
+        }
+
+        if (Object.keys(data.text_values).length > 0) {
+            statsHtml += `
+                <h5 class="mt-4">Уникальные значения (первые 100)</h5>
+            `;
+            Object.entries(data.text_values).forEach(([field, values]) => {
+                statsHtml += `
+                    <div class="mb-3">
+                        <h6>${field} (${values.length} значений)</h6>
+                        <div class="d-flex flex-wrap gap-1">
+                `;
+                values.slice(0, 20).forEach(value => {
+                    statsHtml += `<span class="badge bg-secondary">${value}</span>`;
+                });
+                if (values.length > 20) {
+                    statsHtml += `<span class="badge bg-light text-dark">... и еще ${values.length - 20}</span>`;
+                }
+                statsHtml += `</div></div>`;
+            });
+        }
+
+        document.getElementById('statsContent').innerHTML = statsHtml;
+    }
+
+    // Обновление пагинации
+    function updatePagination(data) {
+        const paginationNav = document.getElementById('paginationNav');
+        const paginationList = document.getElementById('paginationList');
+        
+        if (data.pages <= 1) {
+            paginationNav.style.display = 'none';
+            return;
+        }
+
+        paginationNav.style.display = 'block';
+        let paginationHtml = '';
+
+        // Предыдущая страница
+        if (data.has_prev) {
+            paginationHtml += `
+                <li class="page-item">
+                    <a class="page-link" href="#" data-page="${data.current_page - 1}">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                </li>
+            `;
+        }
+
+        // Номера страниц
+        const startPage = Math.max(1, data.current_page - 2);
+        const endPage = Math.min(data.pages, data.current_page + 2);
+
+        for (let i = startPage; i <= endPage; i++) {
+            paginationHtml += `
+                <li class="page-item ${i === data.current_page ? 'active' : ''}">
+                    <a class="page-link" href="#" data-page="${i}">${i}</a>
+                </li>
+            `;
+        }
+
+        // Следующая страница
+        if (data.has_next) {
+            paginationHtml += `
+                <li class="page-item">
+                    <a class="page-link" href="#" data-page="${data.current_page + 1}">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                </li>
+            `;
+        }
+
+        paginationList.innerHTML = paginationHtml;
+
+        // Обработчики кликов по пагинации
+        paginationList.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (e.target.classList.contains('page-link')) {
+                const page = parseInt(e.target.dataset.page);
+                if (!document.getElementById('page')) {
+                    const pageInput = document.createElement('input');
+                    pageInput.type = 'number';
+                    pageInput.id = 'page';
+                    pageInput.value = page;
+                    pageInput.style.display = 'none';
+                    document.body.appendChild(pageInput);
+                } else {
+                    document.getElementById('page').value = page;
+                }
+                performSearch();
+            }
+        });
+    }
+
+    // Очистка фильтров
+    function clearFilters() {
+        document.getElementById('generalSearch').value = '';
+        currentColumns.forEach(column => {
+            const exactInput = document.getElementById(column.name);
+            if (exactInput) exactInput.value = '';
+
+            if (column.filter_type === 'numeric') {
+                const minInput = document.getElementById(`${column.name}_min`);
+                const maxInput = document.getElementById(`${column.name}_max`);
+                if (minInput) minInput.value = '';
+                if (maxInput) maxInput.value = '';
+            } else if (column.filter_type === 'text') {
+                const likeInput = document.getElementById(`${column.name}_like`);
+                if (likeInput) likeInput.value = '';
+            } else if (column.filter_type === 'date') {
+                const fromInput = document.getElementById(`${column.name}_from`);
+                const toInput = document.getElementById(`${column.name}_to`);
+                if (fromInput) fromInput.value = '';
+                if (toInput) toInput.value = '';
+            }
+        });
+        
+        sortBySelect.value = '';
+        document.getElementById('sortOrder').value = 'asc';
+        document.getElementById('perPage').value = '25';
+        
+        resultsSection.style.display = 'none';
+        currentData = null;
+    }
+
+    // Экспорт данных
+    function exportData() {
+        if (!currentData || !currentData.items.length) {
+            showNotification('Нет данных для экспорта', 'warning');
+            return;
+        }
+
+        // Создаем CSV
+        const headers = Object.keys(currentData.items[0]).filter(key => key !== 'id');
+        let csv = headers.join(',') + '\n';
+        
+        currentData.items.forEach(item => {
+            const row = headers.map(header => {
+                let value = item[header];
+                if (value === null || value === undefined) value = '';
+                if (typeof value === 'string' && value.includes(',')) {
+                    value = `"${value}"`;
+                }
+                return value;
+            });
+            csv += row.join(',') + '\n';
+        });
+
+        // Скачиваем файл
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `${currentTable}_${new Date().toISOString().split('T')[0]}.csv`;
+        link.click();
+    }
+
+    // Копирование URL
+    function copyUrl() {
+        if (currentUrl) {
+            navigator.clipboard.writeText(window.location.origin + currentUrl).then(() => {
+                showNotification('URL скопирован в буфер обмена', 'success');
+            });
+        }
+    }
+
+    // Вспомогательные функции
+    function showLoading() {
+        document.getElementById('loadingSpinner').style.display = 'block';
+        document.getElementById('errorMessage').style.display = 'none';
+        document.getElementById('resultsContent').innerHTML = '';
+    }
+
+    function hideLoading() {
+        document.getElementById('loadingSpinner').style.display = 'none';
+    }
+
+    function showError(message) {
+        hideLoading();
+        document.getElementById('errorMessage').style.display = 'block';
+        document.getElementById('errorText').textContent = message;
+    }
+
+    function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+        notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        notification.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.remove();
+            }
+        }, 3000);
+    }
+});
+</script>
+{% endblock %}

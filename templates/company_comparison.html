@@ -1,0 +1,906 @@
+{% extends "base.html" %}
+
+{% block title %}Сравнение компаний - Moscow Industry Database{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">
+                <i class="fas fa-balance-scale me-2"></i>
+                Сравнение компаний
+            </h1>
+        </div>
+    </div>
+
+    <!-- Шаг 1: Выбор компаний -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-building me-2"></i>
+                        Шаг 1: Выбор компаний (максимум 3)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="companySearch" class="form-label">Поиск компаний</label>
+                                <input type="text" class="form-control" id="companySearch" 
+                                       placeholder="Введите название, полное название или ИНН компании">
+                                <div class="form-text">Начните вводить для поиска</div>
+                            </div>
+                            <div id="searchResults" class="list-group" style="max-height: 300px; overflow-y: auto; display: none;">
+                                <!-- Результаты поиска будут здесь -->
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Выбранные компании</label>
+                            <div id="selectedCompanies" class="list-group">
+                                <div class="text-muted text-center py-3">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    Выберите компании из результатов поиска
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Шаг 2: Выбор характеристик -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list me-2"></i>
+                        Шаг 2: Выбор характеристик для сравнения
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <button type="button" class="btn btn-outline-primary btn-sm" id="selectAllFields">
+                                    <i class="fas fa-check-square me-1"></i>Выбрать все
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm ms-2" id="clearAllFields">
+                                    <i class="fas fa-square me-1"></i>Очистить все
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-9">
+                            <div id="fieldsSelection">
+                                <div class="text-center py-4">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Загрузка...</span>
+                                    </div>
+                                    <p class="mt-2">Загрузка доступных полей...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Шаг 3: Сравнение -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-table me-2"></i>
+                        Шаг 3: Результат сравнения
+                    </h5>
+                    <button type="button" class="btn btn-primary" id="compareButton" disabled>
+                        <i class="fas fa-balance-scale me-2"></i>
+                        Сравнить компании
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div id="comparisonResults">
+                        <div class="text-center py-4 text-muted">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Выберите компании и характеристики, затем нажмите "Сравнить компании"
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для детального просмотра -->
+<div class="modal fade" id="detailsModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Детальная информация</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="modalContent">
+                    <!-- Содержимое будет загружено динамически -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let selectedCompanies = [];
+    let availableFields = {};
+    let searchTimeout;
+
+    // Элементы DOM
+    const companySearch = document.getElementById('companySearch');
+    const searchResults = document.getElementById('searchResults');
+    const selectedCompaniesDiv = document.getElementById('selectedCompanies');
+    const fieldsSelection = document.getElementById('fieldsSelection');
+    const compareButton = document.getElementById('compareButton');
+    const comparisonResults = document.getElementById('comparisonResults');
+    
+    console.log('DOM elements found:', {
+        companySearch: !!companySearch,
+        searchResults: !!searchResults,
+        selectedCompaniesDiv: !!selectedCompaniesDiv,
+        fieldsSelection: !!fieldsSelection,
+        compareButton: !!compareButton,
+        comparisonResults: !!comparisonResults
+    });
+
+    // Загрузка доступных полей
+    console.log('Starting to load available fields...');
+    loadAvailableFields();
+
+    // Поиск компаний
+    companySearch.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        const query = this.value.trim();
+        
+        if (query.length < 2) {
+            searchResults.style.display = 'none';
+            return;
+        }
+
+        searchTimeout = setTimeout(() => {
+            searchCompanies(query);
+        }, 300);
+    });
+
+    // Загрузка доступных полей
+    async function loadAvailableFields() {
+        try {
+            const response = await fetch('/api/tables');
+            const data = await response.json();
+            
+            let html = '';
+            for (const table of data.tables) {
+                html += `
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h6 class="mb-0">${table.display_name}</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row" id="fields-${table.name}">
+                                <div class="text-center py-2">
+                                    <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                        <span class="visually-hidden">Загрузка...</span>
+                                    </div>
+                                    <span class="ms-2">Загрузка полей...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            fieldsSelection.innerHTML = html;
+            
+            // Загружаем поля для каждой таблицы
+            for (const table of data.tables) {
+                loadTableFields(table.name);
+            }
+            
+        } catch (error) {
+            console.error('Ошибка загрузки таблиц:', error);
+            fieldsSelection.innerHTML = '<div class="alert alert-danger">Ошибка загрузки данных</div>';
+        }
+    }
+
+    // Загрузка полей для конкретной таблицы
+    async function loadTableFields(tableName) {
+        try {
+            console.log(`Загрузка полей для таблицы: ${tableName}`);
+            const response = await fetch(`/api/tables/${tableName}/columns`);
+            const data = await response.json();
+            
+            console.log(`Данные для ${tableName}:`, data);
+            
+            availableFields[tableName] = data.columns;
+            
+            let html = '';
+            for (const field of data.columns) {
+                if (field.name === 'id' || field.name === 'organization_id') continue;
+                
+                html += `
+                    <div class="col-md-6 col-lg-4 mb-2">
+                        <div class="form-check">
+                            <input class="form-check-input field-checkbox" type="checkbox" 
+                                   value="${field.name}" data-table="${tableName}" 
+                                   id="field-${tableName}-${field.name}">
+                            <label class="form-check-label" for="field-${tableName}-${field.name}">
+                                ${field.name}
+                                <small class="text-muted d-block">${field.python_type}</small>
+                            </label>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            const targetElement = document.getElementById(`fields-${tableName}`);
+            if (targetElement) {
+                targetElement.innerHTML = html;
+                console.log(`Поля загружены для ${tableName}:`, html.length, 'символов');
+            } else {
+                console.error(`Элемент fields-${tableName} не найден!`);
+            }
+            
+        } catch (error) {
+            console.error(`Ошибка загрузки полей для ${tableName}:`, error);
+            const targetElement = document.getElementById(`fields-${tableName}`);
+            if (targetElement) {
+                targetElement.innerHTML = '<div class="text-danger">Ошибка загрузки полей</div>';
+            }
+        }
+    }
+
+    // Поиск компаний
+    async function searchCompanies(query) {
+        try {
+            const response = await fetch(`/api/companies/search?q=${encodeURIComponent(query)}&limit=10`);
+            const data = await response.json();
+            
+            if (data.companies && data.companies.length > 0) {
+                let html = '';
+                for (const company of data.companies) {
+                    const isSelected = selectedCompanies.some(c => c.id === company.id);
+                    html += `
+                        <div class="list-group-item list-group-item-action ${isSelected ? 'disabled' : ''}" 
+                             data-company='${JSON.stringify(company)}' 
+                             ${isSelected ? 'style="opacity: 0.5;"' : ''}>
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">${company.name}</h6>
+                                <small>ИНН: ${company.inn}</small>
+                            </div>
+                            <p class="mb-1 text-muted">${company.full_name}</p>
+                            <small>Статус: ${company.spark_status || 'Не указан'}</small>
+                        </div>
+                    `;
+                }
+                searchResults.innerHTML = html;
+                searchResults.style.display = 'block';
+                
+                // Добавляем обработчики кликов
+                searchResults.querySelectorAll('.list-group-item-action').forEach(item => {
+                    if (!item.classList.contains('disabled')) {
+                        item.addEventListener('click', function() {
+                            const company = JSON.parse(this.dataset.company);
+                            addCompany(company);
+                        });
+                    }
+                });
+            } else {
+                searchResults.innerHTML = '<div class="list-group-item text-muted">Компании не найдены</div>';
+                searchResults.style.display = 'block';
+            }
+        } catch (error) {
+            console.error('Ошибка поиска компаний:', error);
+            searchResults.innerHTML = '<div class="list-group-item text-danger">Ошибка поиска</div>';
+            searchResults.style.display = 'block';
+        }
+    }
+
+    // Добавление компании
+    function addCompany(company) {
+        if (selectedCompanies.length >= 3) {
+            alert('Можно выбрать максимум 3 компании');
+            return;
+        }
+        
+        if (selectedCompanies.some(c => c.id === company.id)) {
+            return;
+        }
+        
+        selectedCompanies.push(company);
+        updateSelectedCompanies();
+        updateCompareButton();
+        
+        // Скрываем результаты поиска
+        searchResults.style.display = 'none';
+        companySearch.value = '';
+    }
+
+    // Удаление компании
+    function removeCompany(companyId) {
+        selectedCompanies = selectedCompanies.filter(c => c.id !== companyId);
+        updateSelectedCompanies();
+        updateCompareButton();
+    }
+
+    // Обновление списка выбранных компаний
+    function updateSelectedCompanies() {
+        if (selectedCompanies.length === 0) {
+            selectedCompaniesDiv.innerHTML = `
+                <div class="text-muted text-center py-3">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Выберите компании из результатов поиска
+                </div>
+            `;
+            return;
+        }
+        
+        let html = '';
+        for (const company of selectedCompanies) {
+            html += `
+                <div class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1">${company.name}</h6>
+                        <small class="text-muted">ИНН: ${company.inn}</small>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-danger" 
+                            onclick="removeCompany(${company.id})">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+        }
+        selectedCompaniesDiv.innerHTML = html;
+    }
+
+    // Обновление кнопки сравнения
+    function updateCompareButton() {
+        const hasSelectedFields = Object.keys(availableFields).some(tableName => {
+            return document.querySelectorAll(`input[data-table="${tableName}"]:checked`).length > 0;
+        });
+        
+        compareButton.disabled = selectedCompanies.length === 0 || !hasSelectedFields;
+    }
+
+    // Обработчики для чекбоксов полей
+    document.addEventListener('change', function(e) {
+        if (e.target.classList.contains('field-checkbox')) {
+            updateCompareButton();
+        }
+    });
+
+    // Кнопки "Выбрать все" и "Очистить все"
+    document.getElementById('selectAllFields').addEventListener('click', function() {
+        document.querySelectorAll('.field-checkbox').forEach(checkbox => {
+            checkbox.checked = true;
+        });
+        updateCompareButton();
+    });
+
+    document.getElementById('clearAllFields').addEventListener('click', function() {
+        document.querySelectorAll('.field-checkbox').forEach(checkbox => {
+            checkbox.checked = false;
+        });
+        updateCompareButton();
+    });
+
+    // Сравнение компаний
+    compareButton.addEventListener('click', function() {
+        performComparison();
+    });
+
+    // Выполнение сравнения
+    async function performComparison() {
+        if (selectedCompanies.length === 0) {
+            alert('Выберите хотя бы одну компанию');
+            return;
+        }
+
+        // Собираем выбранные поля
+        const selectedFields = {};
+        document.querySelectorAll('.field-checkbox:checked').forEach(checkbox => {
+            const tableName = checkbox.dataset.table;
+            const fieldName = checkbox.value;
+            
+            if (!selectedFields[tableName]) {
+                selectedFields[tableName] = [];
+            }
+            selectedFields[tableName].push(fieldName);
+        });
+
+        if (Object.keys(selectedFields).length === 0) {
+            alert('Выберите хотя бы одно поле для сравнения');
+            return;
+        }
+
+        try {
+            compareButton.disabled = true;
+            compareButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Сравнение...';
+
+            const response = await fetch('/api/compare/companies', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    company_ids: selectedCompanies.map(c => c.id),
+                    selected_fields: selectedFields
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.error) {
+                throw new Error(data.error);
+            }
+
+            displayComparisonResults(data);
+
+        } catch (error) {
+            console.error('Ошибка сравнения:', error);
+            comparisonResults.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Ошибка сравнения: ${error.message}
+                </div>
+            `;
+        } finally {
+            compareButton.disabled = false;
+            compareButton.innerHTML = '<i class="fas fa-balance-scale me-2"></i>Сравнить компании';
+        }
+    }
+
+    // Отображение результатов сравнения
+    function displayComparisonResults(data) {
+        let html = '<div class="table-responsive">';
+        
+        // Заголовок с названиями компаний
+        html += '<table class="table table-bordered table-striped">';
+        html += '<thead class="table-dark">';
+        html += '<tr><th>Характеристика</th>';
+        for (const company of data.companies) {
+            html += `<th class="text-center">${company.name}<br><small class="text-muted">ИНН: ${company.inn}</small></th>`;
+        }
+        html += '</tr></thead><tbody>';
+
+        // Данные по таблицам
+        for (const [tableName, tableData] of Object.entries(data.comparison_data)) {
+            const tableFields = data.selected_fields[tableName] || [];
+            
+            for (const field of tableFields) {
+                html += `<tr><td class="fw-bold">${tableName}.${field}</td>`;
+                
+                for (const company of data.companies) {
+                    const companyData = tableData[company.id] || [];
+                    let cellContent = '';
+                    
+                    if (companyData.length === 0) {
+                        cellContent = '<span class="text-muted">Нет данных</span>';
+                    } else if (companyData.length === 1) {
+                        cellContent = companyData[0][field] || '<span class="text-muted">-</span>';
+                    } else {
+                        // Если несколько записей, показываем список
+                        cellContent = '<ul class="list-unstyled mb-0">';
+                        for (const record of companyData) {
+                            const value = record[field] || '-';
+                            cellContent += `<li><small>${value}</small></li>`;
+                        }
+                        cellContent += '</ul>';
+                    }
+                    
+                    html += `<td class="text-center">${cellContent}</td>`;
+                }
+                
+                html += '</tr>';
+            }
+        }
+        
+        html += '</tbody></table>';
+        html += '</div>';
+        
+        // Кнопка экспорта
+        html += `
+            <div class="mt-3 text-center">
+                <button type="button" class="btn btn-success" onclick="exportToCSV()">
+                    <i class="fas fa-download me-2"></i>Экспорт в CSV
+                </button>
+                <button type="button" class="btn btn-primary ms-2" onclick="exportToExcel()">
+                    <i class="fas fa-file-excel me-2"></i>Экспорт в Excel
+                </button>
+                <button type="button" class="btn btn-info ms-2" onclick="showDetails()">
+                    <i class="fas fa-info-circle me-2"></i>Подробная информация
+                </button>
+            </div>
+        `;
+        
+        // Секция с графиками
+        html += `
+            <div class="mt-4">
+                <h4 class="mb-3">
+                    <i class="fas fa-chart-bar me-2"></i>
+                    Графическое сравнение
+                </h4>
+                <div class="alert alert-info mb-3">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Примечание:</strong> Данные из связанных таблиц могут отображаться как общие для всех компаний, если прямые связи не установлены в базе данных.
+                </div>
+                <div id="chartsContainer">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Загрузка графиков...</span>
+                        </div>
+                        <p class="mt-2">Создание графиков...</p>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        comparisonResults.innerHTML = html;
+        
+        // Сохраняем данные для экспорта
+        window.comparisonData = data;
+        
+        // Создаем графики
+        createCharts(data);
+    }
+
+    // Экспорт в CSV
+    window.exportToCSV = function() {
+        if (!window.comparisonData) return;
+        
+        // Добавляем BOM для корректного отображения русских символов в Excel
+        let csv = '\uFEFF'; // UTF-8 BOM
+        csv += 'Характеристика';
+        for (const company of window.comparisonData.companies) {
+            csv += `,"${company.name} (ИНН: ${company.inn})"`;
+        }
+        csv += '\n';
+        
+        for (const [tableName, tableData] of Object.entries(window.comparisonData.comparison_data)) {
+            const tableFields = window.comparisonData.selected_fields[tableName] || [];
+            
+            for (const field of tableFields) {
+                csv += `"${tableName}.${field}"`;
+                
+                for (const company of window.comparisonData.companies) {
+                    const companyData = tableData[company.id] || [];
+                    let value = '';
+                    
+                    if (companyData.length === 0) {
+                        value = 'Нет данных';
+                    } else if (companyData.length === 1) {
+                        value = companyData[0][field] || '-';
+                    } else {
+                        value = companyData.map(record => record[field] || '-').join('; ');
+                    }
+                    
+                    // Экранируем кавычки и переносы строк для корректного CSV
+                    value = value.toString().replace(/"/g, '""').replace(/\n/g, ' ').replace(/\r/g, ' ');
+                    csv += `,"${value}"`;
+                }
+                
+                csv += '\n';
+            }
+        }
+        
+        // Скачивание файла с правильной кодировкой
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'company_comparison.csv');
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    // Экспорт в Excel
+    window.exportToExcel = function() {
+        if (!window.comparisonData) return;
+        
+        // Создаем HTML таблицу для Excel
+        let html = `
+            <html xmlns:o="urn:schemas-microsoft-com:office:office" 
+                  xmlns:x="urn:schemas-microsoft-com:office:excel" 
+                  xmlns="http://www.w3.org/TR/REC-html40">
+            <head>
+                <meta charset="utf-8">
+                <meta name="ExcelCreatedDate" content="01/01/2024">
+                <!--[if gte mso 9]>
+                <xml>
+                    <x:ExcelWorkbook>
+                        <x:ExcelWorksheets>
+                            <x:ExcelWorksheet>
+                                <x:Name>Сравнение компаний</x:Name>
+                                <x:WorksheetOptions>
+                                    <x:DefaultRowHeight>285</x:DefaultRowHeight>
+                                </x:WorksheetOptions>
+                            </x:ExcelWorksheet>
+                        </x:ExcelWorksheets>
+                    </x:ExcelWorkbook>
+                </xml>
+                <![endif]-->
+            </head>
+            <body>
+                <table border="1">
+                    <tr>
+                        <th>Характеристика</th>
+        `;
+        
+        for (const company of window.comparisonData.companies) {
+            html += `<th>${company.name} (ИНН: ${company.inn})</th>`;
+        }
+        html += '</tr>';
+        
+        for (const [tableName, tableData] of Object.entries(window.comparisonData.comparison_data)) {
+            const tableFields = window.comparisonData.selected_fields[tableName] || [];
+            
+            for (const field of tableFields) {
+                html += `<tr><td>${tableName}.${field}</td>`;
+                
+                for (const company of window.comparisonData.companies) {
+                    const companyData = tableData[company.id] || [];
+                    let value = '';
+                    
+                    if (companyData.length === 0) {
+                        value = 'Нет данных';
+                    } else if (companyData.length === 1) {
+                        value = companyData[0][field] || '-';
+                    } else {
+                        value = companyData.map(record => record[field] || '-').join('; ');
+                    }
+                    
+                    // Экранируем HTML символы
+                    value = value.toString().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                    html += `<td>${value}</td>`;
+                }
+                
+                html += '</tr>';
+            }
+        }
+        
+        html += `
+                </table>
+            </body>
+            </html>
+        `;
+        
+        // Скачивание файла
+        const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'company_comparison.xls');
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    // Показать подробную информацию
+    window.showDetails = function() {
+        if (!window.comparisonData) return;
+        
+        let html = '<div class="row">';
+        
+        for (const company of window.comparisonData.companies) {
+            html += `
+                <div class="col-md-6 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">${company.name}</h6>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>Полное название:</strong> ${company.full_name}</p>
+                            <p><strong>ИНН:</strong> ${company.inn}</p>
+                            <p><strong>Статус:</strong> ${company.spark_status || 'Не указан'}</p>
+                            <p><strong>Внутренний статус:</strong> ${company.internal_status || 'Не указан'}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        html += '</div>';
+        
+        document.getElementById('modalContent').innerHTML = html;
+        new bootstrap.Modal(document.getElementById('detailsModal')).show();
+    };
+
+    // Создание графиков
+    function createCharts(data) {
+        const chartsContainer = document.getElementById('chartsContainer');
+        if (!chartsContainer) return;
+        
+        // Находим числовые поля
+        const numericFields = findNumericFields(data);
+        
+        if (numericFields.length === 0) {
+            chartsContainer.innerHTML = `
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Нет числовых данных для построения графиков. Выберите поля с числовыми значениями (доходы, прибыль, количество сотрудников и т.д.)
+                </div>
+            `;
+            return;
+        }
+        
+        let chartsHtml = '<div class="row">';
+        
+        // Создаем график для каждого числового поля
+        numericFields.forEach((field, index) => {
+            const chartId = `chart-${index}`;
+            chartsHtml += `
+                <div class="col-lg-6 col-xl-4 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">${field.tableName}.${field.fieldName}</h6>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="${chartId}" width="400" height="300"></canvas>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        chartsHtml += '</div>';
+        chartsContainer.innerHTML = chartsHtml;
+        
+        // Создаем графики
+        numericFields.forEach((field, index) => {
+            const chartId = `chart-${index}`;
+            createChart(chartId, field, data);
+        });
+    }
+    
+    // Поиск числовых полей
+    function findNumericFields(data) {
+        const numericFields = [];
+        
+        for (const [tableName, tableData] of Object.entries(data.comparison_data)) {
+            const tableFields = data.selected_fields[tableName] || [];
+            
+            for (const fieldName of tableFields) {
+                // Проверяем, есть ли числовые данные для этого поля
+                let hasNumericData = false;
+                const fieldData = [];
+                
+                for (const company of data.companies) {
+                    const companyData = tableData[company.id] || [];
+                    for (const record of companyData) {
+                        const value = record[fieldName];
+                        if (value !== null && value !== undefined && value !== '' && !isNaN(parseFloat(value))) {
+                            hasNumericData = true;
+                            fieldData.push({
+                                company: company.name,
+                                value: parseFloat(value),
+                                year: record.year || 'N/A'
+                            });
+                        }
+                    }
+                }
+                
+                if (hasNumericData) {
+                    numericFields.push({
+                        tableName: tableName,
+                        fieldName: fieldName,
+                        data: fieldData
+                    });
+                }
+            }
+        }
+        
+        return numericFields;
+    }
+    
+    // Создание отдельного графика
+    function createChart(canvasId, field, comparisonData) {
+        const ctx = document.getElementById(canvasId);
+        if (!ctx) return;
+        
+        // Группируем данные по компаниям
+        const companyData = {};
+        field.data.forEach(item => {
+            if (!companyData[item.company]) {
+                companyData[item.company] = [];
+            }
+            companyData[item.company].push({
+                year: item.year,
+                value: item.value
+            });
+        });
+        
+        // Определяем тип графика
+        let chartType = 'bar';
+        if (field.data.some(item => item.year !== 'N/A')) {
+            chartType = 'line'; // Если есть данные по годам, используем линейный график
+        }
+        
+        // Подготавливаем данные для Chart.js
+        const datasets = [];
+        const colors = [
+            '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', 
+            '#FF9F40', '#FF6384', '#C9CBCF', '#4BC0C0', '#FF6384'
+        ];
+        
+        let colorIndex = 0;
+        for (const [companyName, values] of Object.entries(companyData)) {
+            const sortedValues = values.sort((a, b) => {
+                if (a.year === 'N/A' || b.year === 'N/A') return 0;
+                return a.year - b.year;
+            });
+            
+            datasets.push({
+                label: companyName,
+                data: sortedValues.map(item => item.value),
+                borderColor: colors[colorIndex % colors.length],
+                backgroundColor: colors[colorIndex % colors.length] + '20',
+                tension: 0.1,
+                fill: false
+            });
+            colorIndex++;
+        }
+        
+        // Создаем график
+        new Chart(ctx, {
+            type: chartType,
+            data: {
+                labels: field.data.some(item => item.year !== 'N/A') 
+                    ? [...new Set(field.data.map(item => item.year).filter(year => year !== 'N/A'))].sort()
+                    : ['Значение'],
+                datasets: datasets
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: `${field.tableName}.${field.fieldName}`,
+                        font: {
+                            size: 14
+                        }
+                    },
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                // Форматируем большие числа
+                                if (value >= 1000000) {
+                                    return (value / 1000000).toFixed(1) + 'M';
+                                } else if (value >= 1000) {
+                                    return (value / 1000).toFixed(1) + 'K';
+                                }
+                                return value;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
