@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from flask_login import LoginManager, login_user, current_user, logout_user, login_required
 from data import db_session
 from flasgger import Swagger
-from api_dynamic_filters import register_dynamic_api_routes
+from api_crud_filters import register_crud_api_routes
 from flask_restful import Api
 from functools import wraps
 from flask import abort
@@ -290,7 +290,7 @@ def init_db():
 init_db()
 
 # Регистрация API маршрутов
-register_dynamic_api_routes(app)
+register_crud_api_routes(app)
 
 
 @app.route('/')
