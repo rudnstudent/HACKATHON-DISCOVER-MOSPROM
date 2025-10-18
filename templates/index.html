@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Production Analytics Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .dashboard {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .chart-tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+            padding: 0 20px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            padding: 15px 25px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            color: #6c757d;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab-btn:hover {
+            background: #e9ecef;
+            color: #495057;
+        }
+
+        .tab-btn.active {
+            color: #007bff;
+            border-bottom: 3px solid #007bff;
+            background: white;
+        }
+
+        .chart-container {
+            padding: 30px;
+            display: none;
+            min-height: 500px;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        .chart-container.active {
+            display: block;
+        }
+
+        .chart-title {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #2c3e50;
+            font-size: 1.5em;
+        }
+
+        .chart-wrapper {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            height: 400px;
+            position: relative;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        @media (max-width: 768px) {
+            .chart-tabs {
+                flex-direction: column;
+            }
+            
+            .tab-btn {
+                width: 100%;
+                text-align: center;
+            }
+            
+            .chart-wrapper {
+                height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <div class="header">
+            <h1>📊 Production Analytics</h1>
+            <p>Анализ производственных показателей</p>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div>Total Production</div>
+                <div class="stat-value">4,350,000</div>
+                <div>+5.2% vs previous</div>
+            </div>
+            <div class="stat-card">
+                <div>Active Sectors</div>
+                <div class="stat-value">12</div>
+                <div>across 8 districts</div>
+            </div>
+            <div class="stat-card">
+                <div>Employees</div>
+                <div class="stat-value">2,847</div>
+                <div>working</div>
+            </div>
+        </div>
+
+        <!-- Панель переключения графиков -->
+        <div class="chart-tabs">
+            <button class="tab-btn active" data-chart="sectors">Распределение по отраслям</button>
+            <button class="tab-btn" data-chart="districts">Распределение по округам</button>
+            <button class="tab-btn" data-chart="dynamics">Динамика production</button>
+            <button class="tab-btn" data-chart="comparison">production vs employees</button>
+        </div>
+
+        <!-- Контейнеры графиков -->
+        <div id="chart-sectors" class="chart-container active">
+            <h2 class="chart-title">Доля Production по отраслям</h2>
+            <div class="chart-wrapper">
+                <canvas id="sectorsChart"></canvas>
+            </div>
+        </div>
+        
+        <div id="chart-districts" class="chart-container">
+            <h2 class="chart-title">Распределение Production по округам</h2>
+            <div class="chart-wrapper">
+                <canvas id="districtsChart"></canvas>
+            </div>
+        </div>
+        
+        <div id="chart-dynamics" class="chart-container">
+            <h2 class="chart-title">Динамика Production по периодам</h2>
+            <div class="chart-wrapper">
+                <canvas id="dynamicsChart"></canvas>
+            </div>
+        </div>
+        
+        <div id="chart-comparison" class="chart-container">
+            <h2 class="chart-title">Production vs Employees</h2>
+            <div class="chart-wrapper">
+                <canvas id="comparisonChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Данные для графиков
+        const chartData = {
+            sectors: {
+                labels: ['Технологии', 'Промышленность', 'Сельское хозяйство', 'Энергетика', 'Логистика', 'Строительство'],
+                data: [25, 20, 15, 18, 12, 10],
+                colors: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40']
+            },
+            districts: {
+                labels: ['Центральный', 'Северо-Западный', 'Южный', 'Приволжский', 'Уральский', 'Сибирский', 'Дальневосточный'],
+                data: [450000, 380000, 420000, 510000, 480000, 390000, 320000],
+                colors: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#FF6384']
+            },
+            dynamics: {
+                labels: ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'],
+                data: [3850000, 3920000, 4010000, 4100000, 4180000, 4250000, 4320000, 4280000, 4350000, 4420000, 4480000, 4500000]
+            },
+            comparison: {
+                labels: ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн'],
+                production: [3850000, 3920000, 4010000, 4100000, 4180000, 4250000],
+                employees: [2450, 2520, 2610, 2680, 2740, 2790]
+            }
+        };
+
+        // Инициализация графиков
+        let charts = {};
+
+        function initializeCharts() {
+            // График по отраслям (Круговая диаграмма)
+            charts.sectors = new Chart(document.getElementById('sectorsChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: chartData.sectors.labels,
+                    datasets: [{
+                        data: chartData.sectors.data,
+                        backgroundColor: chartData.sectors.colors,
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.label}: ${context.parsed}%`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // График по округам (Столбчатая диаграмма)
+            charts.districts = new Chart(document.getElementById('districtsChart'), {
+                type: 'bar',
+                data: {
+                    labels: chartData.districts.labels,
+                    datasets: [{
+                        label: 'Production',
+                        data: chartData.districts.data,
+                        backgroundColor: chartData.districts.colors,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return value.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Динамика production (Линейный график)
+            charts.dynamics = new Chart(document.getElementById('dynamicsChart'), {
+                type: 'line',
+                data: {
+                    labels: chartData.dynamics.labels,
+                    datasets: [{
+                        label: 'Production',
+                        data: chartData.dynamics.data,
+                        borderColor: '#36A2EB',
+                        backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            ticks: {
+                                callback: function(value) {
+                                    return value.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Сравнение production и employees (Комбинированный график)
+            charts.comparison = new Chart(document.getElementById('comparisonChart'), {
+                type: 'bar',
+                data: {
+                    labels: chartData.comparison.labels,
+                    datasets: [
+                        {
+                            label: 'Production',
+                            data: chartData.comparison.production,
+                            backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Employees',
+                            data: chartData.comparison.employees,
+                            type: 'line',
+                            borderColor: '#FF6384',
+                            backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                            borderWidth: 3,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Production'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return value.toLocaleString();
+                                }
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Employees'
+                            },
+                            grid: {
+                                drawOnChartArea: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Функция переключения графиков
+        function switchChart(chartType) {
+            // Скрыть все графики
+            document.querySelectorAll('.chart-container').forEach(container => {
+                container.classList.remove('active');
+            });
+            
+            // Убрать активный класс со всех кнопок
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Показать выбранный график
+            document.getElementById(`chart-${chartType}`).classList.add('active');
+            
+            // Активировать соответствующую кнопку
+            event.target.classList.add('active');
+
+            // Перерисовка графиков при необходимости
+            setTimeout(() => {
+                if (charts[chartType]) {
+                    charts[chartType].resize();
+                }
+            }, 100);
+        }
+
+        // Инициализация при загрузке страницы
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeCharts();
+            
+            // Назначить обработчики на все кнопки
+            document.querySelectorAll('.tab-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    switchChart(this.dataset.chart);
+                });
+            });
+        });
+    </script>
+</body>
+</html>
