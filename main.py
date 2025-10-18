@@ -12,6 +12,7 @@ from flask_restful import Api
 from functools import wraps
 from flask import abort
 import requests
+import excel_api
 
 app = Flask(__name__)
 
@@ -351,6 +352,8 @@ def upload_file():
             file_size = os.path.getsize(filepath)
             file_size_mb = round(file_size / (1024 * 1024), 2)
 
+            excel_api.excel_to_api(filepath)
+
             return render_template('index.html', 
                                  success=f'Файл "{filename}" успешно загружен! Размер: {file_size_mb} МБ')
 
@@ -446,18 +449,8 @@ import requests
 app = Flask(__name__)
 
 load_dotenv()
-
-# Конфигурация с резервным секретным ключом
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
-app.config['UPLOAD_FOLDER'] = 'static/uploads'
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 МБ максимальный размер файла
-
-# Разрешенные расширения файлов
-ALLOWED_EXTENSIONS = {'csv', 'xlsx', 'xls', 'pdf', 'txt', 'doc', 'docx'}
-
-# Создаем папку для загрузок, если она не существует
-if not os.path.exists(app.config['UPLOAD_FOLDER']):
-    os.makedirs(app.config['UPLOAD_FOLDER'])
+# Конфигурация
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 
 swagger = Swagger(app, template={
         "swagger": "2.0",
@@ -780,6 +773,8 @@ def upload_file():
             # Получаем размер файла
             file_size = os.path.getsize(filepath)
             file_size_mb = round(file_size / (1024 * 1024), 2)
+
+
 
             return render_template('index.html', 
                                  success=f'Файл "{filename}" успешно загружен! Размер: {file_size_mb} МБ')
