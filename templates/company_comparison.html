@@ -521,6 +521,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 <button type="button" class="btn btn-primary ms-2" onclick="exportToExcel()">
                     <i class="fas fa-file-excel me-2"></i>Экспорт в Excel
                 </button>
+                <button type="button" class="btn btn-info ms-2" onclick="exportChartsAsImages()">
+                    <i class="fas fa-image me-2"></i>Экспорт графиков
+                </button>
+                <button type="button" class="btn btn-warning ms-2" onclick="exportAllChartsAsPDF()">
+                    <i class="fas fa-file-pdf me-2"></i>Экспорт PDF
+                </button>
+                <button type="button" class="btn btn-secondary ms-2" onclick="exportChartsHighQuality()">
+                    <i class="fas fa-image me-2"></i>Экспорт HQ
+                </button>
                 <button type="button" class="btn btn-info ms-2" onclick="showDetails()">
                     <i class="fas fa-info-circle me-2"></i>Подробная информация
                 </button>
@@ -899,6 +908,214 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
             }
+        });
+    }
+
+    // Экспорт всех графиков как изображения
+    window.exportChartsAsImages = async function() {
+        const chartsContainer = document.getElementById('chartsContainer');
+        if (!chartsContainer) {
+            alert('Графики не найдены');
+            return;
+        }
+
+        const charts = chartsContainer.querySelectorAll('canvas');
+        if (charts.length === 0) {
+            alert('Нет графиков для экспорта');
+            return;
+        }
+
+        try {
+            // Создаем ZIP архив с изображениями
+            const JSZip = window.JSZip || await loadJSZip();
+            const zip = new JSZip();
+            
+            for (let i = 0; i < charts.length; i++) {
+                const canvas = charts[i];
+                const chartTitle = canvas.closest('.card').querySelector('.card-header h6').textContent;
+                
+                // Конвертируем canvas в изображение
+                const dataURL = canvas.toDataURL('image/png', 1.0);
+                const base64Data = dataURL.split(',')[1];
+                
+                // Добавляем в ZIP
+                const fileName = `chart_${i + 1}_${chartTitle.replace(/[^a-zA-Z0-9]/g, '_')}.png`;
+                zip.file(fileName, base64Data, { base64: true });
+            }
+            
+            // Скачиваем ZIP
+            const content = await zip.generateAsync({ type: 'blob' });
+            const url = URL.createObjectURL(content);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `charts_export_${new Date().toISOString().slice(0, 10)}.zip`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+        } catch (error) {
+            console.error('Ошибка экспорта:', error);
+            // Fallback: экспорт по одному
+            exportChartsIndividually();
+        }
+    }
+
+    // Экспорт графиков по одному (fallback)
+    function exportChartsIndividually() {
+        const chartsContainer = document.getElementById('chartsContainer');
+        const charts = chartsContainer.querySelectorAll('canvas');
+        
+        charts.forEach((canvas, index) => {
+            const chartTitle = canvas.closest('.card').querySelector('.card-header h6').textContent;
+            const dataURL = canvas.toDataURL('image/png', 1.0);
+            
+            const a = document.createElement('a');
+            a.href = dataURL;
+            a.download = `chart_${index + 1}_${chartTitle.replace(/[^a-zA-Z0-9]/g, '_')}.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        });
+    }
+
+    // Экспорт с высоким качеством через html2canvas
+    window.exportChartsHighQuality = async function() {
+        const chartsContainer = document.getElementById('chartsContainer');
+        if (!chartsContainer) {
+            alert('Графики не найдены');
+            return;
+        }
+
+        const chartCards = chartsContainer.querySelectorAll('.card');
+        if (chartCards.length === 0) {
+            alert('Нет графиков для экспорта');
+            return;
+        }
+
+        try {
+            const JSZip = window.JSZip || await loadJSZip();
+            const zip = new JSZip();
+            
+            for (let i = 0; i < chartCards.length; i++) {
+                const card = chartCards[i];
+                const chartTitle = card.querySelector('.card-header h6').textContent;
+                
+                // Используем html2canvas для лучшего качества
+                const canvas = await html2canvas(card, {
+                    backgroundColor: '#ffffff',
+                    scale: 2, // Увеличиваем разрешение в 2 раза
+                    useCORS: true,
+                    allowTaint: true
+                });
+                
+                const dataURL = canvas.toDataURL('image/png', 1.0);
+                const base64Data = dataURL.split(',')[1];
+                
+                const fileName = `chart_hq_${i + 1}_${chartTitle.replace(/[^a-zA-Z0-9]/g, '_')}.png`;
+                zip.file(fileName, base64Data, { base64: true });
+            }
+            
+            // Скачиваем ZIP
+            const content = await zip.generateAsync({ type: 'blob' });
+            const url = URL.createObjectURL(content);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `charts_hq_export_${new Date().toISOString().slice(0, 10)}.zip`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+        } catch (error) {
+            console.error('Ошибка экспорта высокого качества:', error);
+            // Fallback к обычному экспорту
+            exportChartsAsImages();
+        }
+    }
+
+    // Экспорт всех графиков в один PDF
+    window.exportAllChartsAsPDF = async function() {
+        const chartsContainer = document.getElementById('chartsContainer');
+        if (!chartsContainer) {
+            alert('Графики не найдены');
+            return;
+        }
+
+        const chartCards = chartsContainer.querySelectorAll('.card');
+        if (chartCards.length === 0) {
+            alert('Нет графиков для экспорта');
+            return;
+        }
+
+        try {
+            // Загружаем jsPDF
+            const { jsPDF } = window.jspdf || await loadJsPDF();
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            
+            let yPosition = 20;
+            const pageHeight = 280; // Высота страницы в мм
+            const chartHeight = 80; // Высота одного графика в мм
+            
+            for (let i = 0; i < chartCards.length; i++) {
+                const card = chartCards[i];
+                const chartTitle = card.querySelector('.card-header h6').textContent;
+                
+                // Проверяем, нужна ли новая страница
+                if (yPosition + chartHeight > pageHeight) {
+                    pdf.addPage();
+                    yPosition = 20;
+                }
+                
+                // Добавляем заголовок
+                pdf.setFontSize(12);
+                pdf.text(chartTitle, 20, yPosition);
+                yPosition += 10;
+                
+                // Используем html2canvas для лучшего качества
+                const canvas = await html2canvas(card, {
+                    backgroundColor: '#ffffff',
+                    scale: 1.5,
+                    useCORS: true,
+                    allowTaint: true
+                });
+                
+                const dataURL = canvas.toDataURL('image/png', 1.0);
+                const imgWidth = 170; // Ширина изображения в мм
+                const imgHeight = chartHeight - 10;
+                
+                pdf.addImage(dataURL, 'PNG', 20, yPosition, imgWidth, imgHeight);
+                yPosition += imgHeight + 20;
+            }
+            
+            // Скачиваем PDF
+            pdf.save(`charts_comparison_${new Date().toISOString().slice(0, 10)}.pdf`);
+            
+        } catch (error) {
+            console.error('Ошибка создания PDF:', error);
+            alert('Ошибка создания PDF. Попробуйте экспорт изображений.');
+        }
+    }
+
+    // Загрузка JSZip
+    function loadJSZip() {
+        return new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+            script.onload = () => resolve(window.JSZip);
+            script.onerror = reject;
+            document.head.appendChild(script);
+        });
+    }
+
+    // Загрузка jsPDF
+    function loadJsPDF() {
+        return new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+            script.onload = () => resolve(window.jspdf);
+            script.onerror = reject;
+            document.head.appendChild(script);
         });
     }
 });
